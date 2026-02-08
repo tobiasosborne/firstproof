@@ -4,15 +4,44 @@
 
 ## About
 
-This repository tests the [af (Adversarial Proof Framework)](../vibefeld) tool on the 10 research-level mathematics problems posed in the *First Proof* paper (Abouzaid, Blumberg, Hairer et al.). The source paper is in [`docs/`](docs/).
+This repository tests the [`af` (Adversarial Proof Framework)](https://github.com/tobiasosborne/vibefeld) tool on the 10 research-level mathematics problems posed in the [*First Proof*](https://1stproof.org) paper by Abouzaid, Blumberg, Hairer, Kileel, Kolda, Nelson, Spielman, Srivastava, Ward, Weinberger, and Williams. The source paper is in [`docs/`](docs/).
+
+### The First Proof Paper
+
+*First Proof* is an experiment to assess the ability of current AI systems to correctly answer research-level mathematics questions. The paper presents 10 problems that arose naturally in the research of the authors, spanning algebraic combinatorics, spectral graph theory, algebraic topology, stochastic analysis, symplectic geometry, representation theory, lattices in Lie groups, tensor analysis, and numerical linear algebra. The answers are known to the authors but were encrypted and posted at [1stproof.org](https://1stproof.org), with public release scheduled for February 13, 2026.
+
+Key features of the benchmark:
+- Questions are sampled from the true distribution of problems working mathematicians encounter.
+- Answers had never appeared on the internet or in any public forum prior to release.
+- Each answer is a proof of roughly five pages or less.
+- Preliminary tests by the authors indicate that frontier AI systems (GPT 5.2 Pro, Gemini 3.0 Deepthink) struggle with many of the problems in a single-shot setting.
+
+### What This Repo Does
 
 The `af` tool uses an adversarial prover/verifier protocol to decompose conjectures into proof trees. An AI agent proposes proof steps, and a separate agent attempts to find flaws. **This process is heuristic and fallible** — the adversarial structure reduces but does not eliminate the risk of unsound arguments.
+
+This repo is a test bed for `af` on hard, real-world mathematical problems whose answers are independently verifiable.
+
+## The 10 Problems
+
+| # | Problem | Author | Field |
+|---|---------|--------|-------|
+| 1 | Equivalence of the Phi^4_3 measure under smooth shifts | Hairer | Stochastic analysis / QFT |
+| 2 | Existence of Whittaker functions for Rankin-Selberg integrals | Nelson | Representation theory |
+| 3 | Markov chain with ASEP polynomial stationary distribution | Williams | Algebraic combinatorics |
+| 4 | Superadditivity of inverse Phi under free additive convolution | Srivastava / Spielman | Spectral theory |
+| 5 | Slice filtration for incomplete transfer systems | Blumberg | Algebraic topology |
+| 6 | Existence of large epsilon-light subsets in graphs | Spielman | Spectral graph theory |
+| 7 | Lattices with 2-torsion and rationally acyclic universal covers | Weinberger | Lattices in Lie groups |
+| 8 | Lagrangian smoothing of polyhedral Lagrangian surfaces | Abouzaid | Symplectic geometry |
+| 9 | Algebraic relations on quadrilinear determinantal tensors | Kileel | Tensor analysis |
+| 10 | Preconditioned CG for CP decomposition with RKHS constraints | Kolda | Numerical linear algebra |
 
 ## Repository Structure
 
 ```
 docs/              Source paper (First_Proof.tex)
-problem01/         Equivalence of the Phi^4_3 measure under smooth shifts (Hairer)
+problem01/         Problem statement + af proof tree
 problem02/         ...
   ...
 problem10/         ...
