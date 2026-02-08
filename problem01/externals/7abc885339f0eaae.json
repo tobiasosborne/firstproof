@@ -1,0 +1,8 @@
+{
+  "id": "7abc885339f0eaae",
+  "name": "Barashkov-Gubinelli Girsanov",
+  "source": "Barashkov, N., Gubinelli, M. (2021). The Phi^4_3 measure via Girsanov's theorem. Electron. J. Probab., 26, 1-29. arXiv:2004.01513. Constructs Phi^4_3 via Girsanov change of measure on the Polchinski flow. Proves singularity mu perp mu_0.",
+  "content_hash": "49cc27760078b3bb108f9f3cd4bb4483636ec3336521f869075b768426852011",
+  "created": "2026-02-08T14:29:03.554896735Z",
+  "notes": ""
+}

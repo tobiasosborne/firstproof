@@ -1,0 +1,8 @@
+{
+  "id": "99ec84958246d7b2",
+  "name": "Phi43 sub-Gaussian tails",
+  "source": "Barashkov, N., Gubinelli, M. (2021). On the variational method for Euclidean quantum fields in infinite volume. arXiv:2112.05562. Establishes sub-Gaussian concentration and tail estimates for the Phi^4_3 measure.",
+  "content_hash": "33a897d0bc1796f85bab6d436204e1dd25f49b9710ba8b5276503550387dfdcc",
+  "created": "2026-02-08T14:29:05.093497731Z",
+  "notes": ""
+}
