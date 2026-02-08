@@ -1,0 +1,8 @@
+{
+  "id": "09c9aa7b9a602daa",
+  "name": "MSS_derivative_formula",
+  "source": "Marcus-Spielman-Srivastava, Ann. Math. 2015, Proposition 4.5: (p ⊞_n q)'(x) = n(p^{(1)} ⊞_{n-1} q^{(1)})(x) where p^{(1)} = p'/n.",
+  "content_hash": "b09510f9b51b43f51a2d145b8da8c33a392b221f4729d96b243357bebc0d7fa7",
+  "created": "2026-02-08T12:04:46.004984705Z",
+  "notes": ""
+}

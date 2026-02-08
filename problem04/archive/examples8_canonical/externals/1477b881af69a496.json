@@ -1,0 +1,8 @@
+{
+  "id": "1477b881af69a496",
+  "name": "De Bruijn Identity",
+  "source": "examples7/prover13: Validated dS/dt = Phi_n(p_t) where S = sum_{i\u003cj} log|lambda_i - lambda_j| and p_t = p boxplus G_t.",
+  "content_hash": "55b182c1271d9f9d7c5068deef3842f7cdc02070cdb5a487c33ce430a07cc866",
+  "created": "2026-02-08T18:14:49.509443003Z",
+  "notes": ""
+}

@@ -1,0 +1,1 @@
+{"type":"node_validated","timestamp":"2026-02-08T10:11:58.377467763Z","node_id":"1.6.3","note":"The deduction from injectivity to bijectivity via pigeon-hole is correct. Conditional on node 1.6.2 (injectivity) being established, this step is complete."}

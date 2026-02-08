@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:49.999192309Z","definition":{"id":"57f71aff9760d502","name":"monic_polynomial","definition":"A monic polynomial of degree n is p(x) = x^n + a_1 x^{n-1} + ... + a_n with leading coefficient 1.","created":"2026-02-08T13:56:49.998629079Z"}}

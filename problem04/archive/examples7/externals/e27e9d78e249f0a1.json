@@ -1,0 +1,8 @@
+{
+  "id": "e27e9d78e249f0a1",
+  "name": "MSS_random_matrix",
+  "source": "Marcus-Spielman-Srivastava, Ann. Math. 2015, Theorem 4.2: If A, B are n×n Hermitian with char polys p, q and U ~ Haar(U(n)), then E_U[chi_{A+UBU*}(x)] = (p ⊞_n q)(x).",
+  "content_hash": "5430544f91c15133c9e25f64336eec96dc109c8539eba79676ee1d913f9705cb",
+  "created": "2026-02-08T12:04:44.207379648Z",
+  "notes": ""
+}

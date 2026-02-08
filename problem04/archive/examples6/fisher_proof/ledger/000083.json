@@ -1,0 +1,1 @@
+{"type":"node_validated","timestamp":"2026-02-08T10:09:02.951221692Z","node_id":"1.6.1","note":"The pole matching argument is logically valid. The case omega_1(nu_k) = infinity is correctly excluded: nG_p(w) -\u003e 0 as w -\u003e infinity, contradicting the required divergence. Minor note raised suggesting this exclusion be made explicit, but correctness is unaffected."}

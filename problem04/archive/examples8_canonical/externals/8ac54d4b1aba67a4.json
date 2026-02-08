@@ -1,0 +1,8 @@
+{
+  "id": "8ac54d4b1aba67a4",
+  "name": "Subordination Chain Rule",
+  "source": "examples6/fisher_proof: Proved omega'(lambda_i)=1 at roots of r via implicit differentiation. H_r(lambda_i) = H_p(mu_{sigma(i)}) - omega''(lambda_i)/2.",
+  "content_hash": "51f599b15967944591f4460ca72c34928a43e54b5bc40578ceac56914874ebe2",
+  "created": "2026-02-08T18:14:49.526472293Z",
+  "notes": ""
+}

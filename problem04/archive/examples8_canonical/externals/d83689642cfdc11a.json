@@ -1,0 +1,8 @@
+{
+  "id": "d83689642cfdc11a",
+  "name": "Phi_n = 2*Sm2 Identity",
+  "source": "examples7/prover14: Proved Phi_n(p) = 2 * sum_{i\u003cj} 1/(lambda_i - lambda_j)^2 via triple identity cancellation.",
+  "content_hash": "a9fe4af8ca50838f8028755f5f0688085b5a253ae3cba0931d10d4dc336bdb81",
+  "created": "2026-02-08T18:14:49.493372713Z",
+  "notes": ""
+}

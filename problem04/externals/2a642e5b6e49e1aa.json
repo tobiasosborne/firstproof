@@ -1,0 +1,8 @@
+{
+  "id": "2a642e5b6e49e1aa",
+  "name": "Gaussian Splitting",
+  "source": "examples7/prover13: Proved (p boxplus G_s) boxplus (q boxplus G_t) = (p boxplus q) boxplus G_{s+t} exactly.",
+  "content_hash": "37278114928394bc70da6433ceeef7098572522fceddf63d6939a0262d02b0a8",
+  "created": "2026-02-08T18:14:49.518115398Z",
+  "notes": ""
+}

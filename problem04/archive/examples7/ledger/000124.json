@@ -1,0 +1,1 @@
+{"type":"node_validated","timestamp":"2026-02-08T12:45:20.35213797Z","node_id":"1.5.2.2","note":"Independently verified: Phi_n*disc = N_n confirmed for n=2,3,4. All explicit formulas match to machine precision (rel error \u003c 3e-15). The weight homogeneity claim is correct. Node is mathematically sound."}

@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T12:04:31.906236249Z","definition":{"id":"affca9330a8436ca","name":"Phi_n","definition":"The finite free Fisher information: Phi_n(p) = sum_{i=1}^n H_p(lambda_i)^2 = sum_{i=1}^n (sum_{j != i} 1/(lambda_i - lambda_j))^2. Set Phi_n(p) = infinity if p has a repeated root.","created":"2026-02-08T12:04:31.905507155Z"}}

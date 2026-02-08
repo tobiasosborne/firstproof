@@ -1,0 +1,8 @@
+{
+  "id": "08a8e3eeaedbf53f",
+  "name": "Cauchy_Schwarz_inequality",
+  "source": "Standard: For vectors u,v in an inner product space, |\u003cu,v\u003e|^2 \u003c= \u003cu,u\u003e\u003cv,v\u003e. Equivalently, (sum a_i b_i)^2 \u003c= (sum a_i^2)(sum b_i^2).",
+  "content_hash": "6b6b931af3c090f969e8de034f26c989c02480ab0f49b0dc2604f251d0332d22",
+  "created": "2026-02-08T12:04:47.435425314Z",
+  "notes": ""
+}

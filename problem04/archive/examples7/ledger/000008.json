@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T12:04:35.236640096Z","definition":{"id":"5302b1ced7de5fa9","name":"derived_polynomial","definition":"For p in P_n, define p^{(1)} = p'/n, the monic polynomial of degree n-1 whose roots are the critical points of p (which are real and simple by Rolle's theorem and the interlacing property).","created":"2026-02-08T12:04:35.235887096Z"}}

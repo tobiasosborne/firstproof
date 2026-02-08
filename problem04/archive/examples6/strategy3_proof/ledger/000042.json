@@ -1,0 +1,1 @@
+{"type":"node_validated","timestamp":"2026-02-08T12:02:00.555343087Z","node_id":"1.4","note":"Validated by child node 1.4.1 (now validated). The vector reformulation is correct: sigma, tau bijections imply the norm equalities, and the chain rule gives u = h + alpha, v = h + beta. Compatibility alpha - beta = u - v is a trivial consequence."}

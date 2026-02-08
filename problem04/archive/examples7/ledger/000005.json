@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T12:04:28.121199167Z","definition":{"id":"8d9b8eb129b8f4b0","name":"Cauchy_transform","definition":"For p in P_n with roots lambda_1,...,lambda_n, define G_p(z) = (1/n) p'(z)/p(z) = (1/n) sum_{i=1}^n 1/(z - lambda_i). G_p maps C^+ to C^- with simple poles at each lambda_i having residue 1/n.","created":"2026-02-08T12:04:28.120574765Z"}}

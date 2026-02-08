@@ -1,0 +1,8 @@
+{
+  "id": "ae9a324fb44c7b32",
+  "name": "S2 Additivity",
+  "source": "examples7/prover14: Proved S2(p boxplus q) = S2(p) + S2(q) where S2 = sum_{i\u003cj} (lambda_i - lambda_j)^2.",
+  "content_hash": "f3fc130aa6f1c1923fdd9c6cb83bcec53c889eaf475aeb914cdc6bc40e20b2ff",
+  "created": "2026-02-08T18:14:49.501575608Z",
+  "notes": ""
+}

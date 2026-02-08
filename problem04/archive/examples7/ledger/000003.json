@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T12:04:22.422857155Z","definition":{"id":"0771cc0a9c83ec0a","name":"P_n","definition":"The set of monic real-rooted polynomials of degree n with simple roots. For p in P_n, write p(x) = prod_{i=1}^n (x - lambda_i) with lambda_1 \u003c lambda_2 \u003c ... \u003c lambda_n.","created":"2026-02-08T12:04:22.422280378Z"}}

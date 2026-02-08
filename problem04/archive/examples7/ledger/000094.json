@@ -1,0 +1,1 @@
+{"type":"node_validated","timestamp":"2026-02-08T12:25:42.332411551Z","node_id":"1.4.6","note":"Mathematical conclusion is correct. Minor challenge filed about imprecise 'dominant terms' argument; the factorization r=(x-lambda_i)*Q_i approach is cleaner. Result verified numerically for multiple examples."}
