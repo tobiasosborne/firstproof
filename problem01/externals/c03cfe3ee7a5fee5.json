@@ -1,0 +1,8 @@
+{
+  "id": "c03cfe3ee7a5fee5",
+  "name": "Skorokhod representation theorem",
+  "source": "Skorokhod, A.V. (1956); see also Billingsley, P. (1999). Convergence of Probability Measures, Theorem 6.7. If mu_n -\u003e mu weakly on a Polish space S, there exist random variables X_n ~ mu_n and X ~ mu on a common probability space such that X_n -\u003e X a.s.",
+  "content_hash": "5cdd8b1aa5a35a712c750e82c84feca7ba64de4ad31118af9faf1e1290812476",
+  "created": "2026-02-08T20:18:02.519338743Z",
+  "notes": ""
+}

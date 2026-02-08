@@ -1,0 +1,8 @@
+{
+  "id": "cbf798e51cbcf7cb",
+  "name": "Vitali convergence theorem",
+  "source": "Vitali, G. (1907). If f_n -\u003e f a.s. and {f_n} is uniformly integrable, then E[f_n] -\u003e E[f]. Uniform integrability is established by showing sup_n E[|f_n|^{1+delta}] \u003c infinity for some delta \u003e 0.",
+  "content_hash": "170fc080c3a5ddba987b694d38986d06d3f5c1c09d915918d417d1e249d31f66",
+  "created": "2026-02-08T20:18:11.919529553Z",
+  "notes": ""
+}

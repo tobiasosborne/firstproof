@@ -1,0 +1,8 @@
+{
+  "id": "8f0addeb945f731a",
+  "name": "Besov duality pairing",
+  "source": "Triebel, H. (1983). Theory of Function Spaces. Birkhauser. Chapter 2, Section 2.11: The duality pairing between C^alpha and C^{-beta} (Holder-Besov spaces) is a continuous bilinear map whenever alpha + beta \u003e 0 on compact manifolds without boundary.",
+  "content_hash": "b44c4b62108f8bffe8e0bce7c05916ad0aa788ebed48022524c62f79126cce26",
+  "created": "2026-02-08T19:33:53.723308422Z",
+  "notes": ""
+}
