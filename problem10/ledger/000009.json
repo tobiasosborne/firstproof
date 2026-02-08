@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.080413766Z","definition":{"id":"0d2b2f090a6f4764","name":"mode_k_unfolding","definition":"The mode-k unfolding of a d-way tensor T reshapes it into a matrix T in R^{n_k x M} where M = prod_{i != k} n_i, by arranging the mode-k fibers as columns.","created":"2026-02-08T13:57:34.079691344Z"}}

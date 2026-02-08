@@ -1,0 +1,1 @@
+{"type":"proof_initialized","timestamp":"2026-02-08T13:55:12.627760047Z","conjecture":"For monic real-rooted polynomials p(x) and q(x) of degree n, the inequality 1/Phi_n(p boxplus_n q) \u003e= 1/Phi_n(p) + 1/Phi_n(q) holds, where boxplus_n is the finite free additive convolution and Phi_n(p) = sum_i (sum_{j != i} 1/(lambda_i - lambda_j))^2.","author":"Nikhil Srivastava"}

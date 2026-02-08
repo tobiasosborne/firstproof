@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.068742013Z","definition":{"id":"2df94afc51fa6c0a","name":"conjugate_gradient","definition":"CG is an iterative method for solving Ax = b when A is symmetric positive definite. Preconditioned CG (PCG) uses a preconditioner M approx A^{-1} to accelerate convergence.","created":"2026-02-08T13:57:34.068011991Z"}}

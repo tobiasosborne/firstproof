@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:26.269749011Z","definition":{"id":"93369b4807ccdfc9","name":"Zariski_generic","definition":"Matrices are Zariski-generic if they lie outside a proper algebraic subvariety, i.e., they satisfy no special polynomial relations. The result holds for generic choices.","created":"2026-02-08T13:57:26.26911919Z"}}

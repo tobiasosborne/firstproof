@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:26.281955824Z","definition":{"id":"9cbacbfeb0a8c9bd","name":"determinantal_tensor","definition":"Q^{abcd} in R^{3x3x3x3} is defined by Q^{abcd}_{ijkl} = det[A^(a)(i,:); A^(b)(j,:); A^(c)(k,:); A^(d)(l,:)], the 4x4 determinant formed by stacking rows from four matrices.","created":"2026-02-08T13:57:26.281366104Z"}}

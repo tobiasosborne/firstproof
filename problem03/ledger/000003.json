@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:46.459433762Z","definition":{"id":"aaea11c22a30bcf3","name":"partition_distinct_parts","definition":"A partition lambda = (lambda_1 \u003e ... \u003e lambda_n \u003e= 0) with distinct parts is a strictly decreasing sequence of non-negative integers.","created":"2026-02-08T13:56:46.458372296Z"}}

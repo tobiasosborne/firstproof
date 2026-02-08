@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:50.036808533Z","definition":{"id":"44fe70d3d214eeea","name":"Phi_n_functional","definition":"For a monic polynomial p(x) = prod_{i\u003c=n}(x - lambda_i) with distinct roots, Phi_n(p) = sum_i (sum_{j != i} 1/(lambda_i - lambda_j))^2. If p has a multiple root, Phi_n(p) = infinity.","created":"2026-02-08T13:56:50.03618541Z"}}

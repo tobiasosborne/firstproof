@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.03255762Z","definition":{"id":"3a54c1a6c8cd1955","name":"Khatri_Rao_product","definition":"The Khatri-Rao product A odot B is the column-wise Kronecker product: if A has columns a_j and B has columns b_j, then A odot B has columns a_j otimes b_j.","created":"2026-02-08T13:57:34.031868099Z"}}

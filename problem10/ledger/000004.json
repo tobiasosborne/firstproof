@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.021161575Z","definition":{"id":"e0c98b5ec21fb8d0","name":"RKHS","definition":"A Reproducing Kernel Hilbert Space is a Hilbert space of functions where evaluation functionals are continuous. The kernel matrix K encodes inner products K_{ij} = k(x_i, x_j).","created":"2026-02-08T13:57:34.020478755Z"}}

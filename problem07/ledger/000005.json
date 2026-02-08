@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:18.256652208Z","definition":{"id":"63251c00a29cfe20","name":"two_torsion","definition":"An element gamma in a group Gamma has 2-torsion if gamma^2 = e (the identity) and gamma != e.","created":"2026-02-08T13:57:18.256011284Z"}}

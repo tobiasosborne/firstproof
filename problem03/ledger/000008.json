@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:46.520186981Z","definition":{"id":"c822515593dd1401","name":"Markov_chain","definition":"A Markov chain on a finite state space S is given by a transition matrix P (rows sum to 1). A stationary distribution pi satisfies pi P = pi.","created":"2026-02-08T13:56:46.519274424Z"}}

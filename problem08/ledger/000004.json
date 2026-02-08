@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:22.525183076Z","definition":{"id":"3bd4d78d093e9add","name":"Lagrangian_submanifold","definition":"A 2-dimensional submanifold L of (R^4, omega) is Lagrangian if omega|_L = 0. Lagrangians have dimension equal to half the ambient symplectic dimension.","created":"2026-02-08T13:57:22.524524319Z"}}

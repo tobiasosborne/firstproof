@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:46.50840234Z","definition":{"id":"40be81ab53a24bd1","name":"interpolation_Macdonald_polynomial","definition":"P*_lambda(x_1,...,x_n; q, t) is the interpolation Macdonald polynomial, a normalization of the Macdonald polynomial adapted to the interpolation setting.","created":"2026-02-08T13:56:46.5077615Z"}}

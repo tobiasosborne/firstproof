@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:18.244855064Z","definition":{"id":"703350f614f270b9","name":"real_semisimple_group","definition":"A connected real Lie group whose Lie algebra is semisimple (has no nonzero solvable ideals). Examples: SL_n(R), SO(p,q), Sp(2n,R).","created":"2026-02-08T13:57:18.244263942Z"}}

@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:35.015607016Z","definition":{"id":"ed904b16b4af9906","name":"pushforward_measure","definition":"The pushforward measure T_psi^* mu is defined by (T_psi^* mu)(A) = mu(T_psi^{-1}(A)) for measurable sets A.","created":"2026-02-08T13:56:35.014862437Z"}}

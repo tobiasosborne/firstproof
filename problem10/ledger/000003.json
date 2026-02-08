@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.007827873Z","definition":{"id":"ec400f2c48fc94e7","name":"CP_decomposition","definition":"A CP (Canonical Polyadic) decomposition expresses a tensor T as a sum of r rank-1 tensors: T approx sum_{j=1}^r a_{1j} otimes a_{2j} otimes ... otimes a_{dj}.","created":"2026-02-08T13:57:34.007278056Z"}}

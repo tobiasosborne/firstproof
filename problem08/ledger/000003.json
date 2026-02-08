@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:22.512638602Z","definition":{"id":"e03e77ba3ece4f02","name":"symplectic_R4","definition":"R^4 equipped with the standard symplectic form omega = dx_1 wedge dy_1 + dx_2 wedge dy_2.","created":"2026-02-08T13:57:22.511984445Z"}}

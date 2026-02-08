@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:18.279453666Z","definition":{"id":"e52f2f589a2be27d","name":"rationally_acyclic","definition":"A space X is acyclic over Q if H_k(X; Q) = 0 for all k \u003e 0 and H_0(X; Q) = Q. Equivalently, X has the rational homology of a point.","created":"2026-02-08T13:57:18.27875334Z"}}

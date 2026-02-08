@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:13.861155757Z","definition":{"id":"66cf492b466a09f3","name":"positive_semidefinite","definition":"A symmetric matrix M is positive semidefinite (PSD) if x^T M x \u003e= 0 for all vectors x, equivalently if all eigenvalues are nonneg.","created":"2026-02-08T13:57:13.86056911Z"}}

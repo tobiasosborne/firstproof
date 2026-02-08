@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:46.473252531Z","definition":{"id":"6b035f43beb31031","name":"restricted_partition","definition":"A partition is restricted if it has a unique part of size 0 and no part of size 1.","created":"2026-02-08T13:56:46.472637792Z"}}

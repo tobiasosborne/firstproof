@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:41.237610986Z","definition":{"id":"1f2e51f92ce7ebea","name":"conductor_ideal","definition":"The conductor ideal q of a generic irreducible admissible representation pi of GL_n(F) is the largest ideal of o such that pi has a nonzero vector fixed by the congruence subgroup K_1(q).","created":"2026-02-08T13:56:41.23690509Z"}}

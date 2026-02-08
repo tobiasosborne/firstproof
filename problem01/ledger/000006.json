@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:35.028535915Z","definition":{"id":"897208d90aa76f05","name":"measure_equivalence","definition":"Two measures mu and nu are equivalent (mutually absolutely continuous) if they have the same null sets: mu(A) = 0 iff nu(A) = 0 for all measurable A.","created":"2026-02-08T13:56:35.027801834Z"}}

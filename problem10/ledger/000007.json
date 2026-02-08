@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.056346539Z","definition":{"id":"802f92390e2fe4e0","name":"selection_matrix","definition":"S in R^{N x q} is a subset of columns of the N x N identity matrix, selecting the q observed entries from vec(T).","created":"2026-02-08T13:57:34.05541561Z"}}

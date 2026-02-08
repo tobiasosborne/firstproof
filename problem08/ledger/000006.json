@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:22.548006174Z","definition":{"id":"5331ecf3ed02a9ad","name":"Lagrangian_smoothing","definition":"A Lagrangian smoothing of K is a Hamiltonian isotopy K_t of smooth Lagrangian submanifolds parametrized by (0,1], extending to a topological isotopy on [0,1] with K_0 = K.","created":"2026-02-08T13:57:22.547377915Z"}}

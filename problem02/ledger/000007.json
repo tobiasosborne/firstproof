@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:41.250179239Z","definition":{"id":"47f2af077bc997ed","name":"Rankin_Selberg_integral","definition":"The local Rankin-Selberg integral for GL_{n+1} x GL_n is int_{N_n \\ GL_n(F)} W(diag(g,1) u_Q) V(g) |det g|^{s-1/2} dg, pairing Whittaker functions W of Pi and V of pi.","created":"2026-02-08T13:56:41.249468744Z"}}

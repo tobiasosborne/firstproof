@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:26.293300207Z","definition":{"id":"5c1ab664f9d53887","name":"polynomial_map","definition":"A map F: R^m -\u003e R^N whose coordinate functions are polynomials in the input variables.","created":"2026-02-08T13:57:26.292710887Z"}}

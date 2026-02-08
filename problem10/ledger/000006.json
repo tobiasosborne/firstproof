@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:34.043882562Z","definition":{"id":"a32605945c637120","name":"MTTKRP","definition":"Matricized Tensor Times Khatri-Rao Product: B = T Z where T is the mode-k unfolding and Z is the Khatri-Rao product of all other factor matrices.","created":"2026-02-08T13:57:34.043289044Z"}}

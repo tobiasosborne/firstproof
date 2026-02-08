@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:13.837458322Z","definition":{"id":"69fd828f437861b3","name":"induced_subgraph_Laplacian","definition":"For S subset V, G_S = (V, E(S,S)) is the graph with the same vertex set but only edges with both endpoints in S. L_S is its Laplacian, embedded in R^{|V| x |V|}.","created":"2026-02-08T13:57:13.836905873Z"}}

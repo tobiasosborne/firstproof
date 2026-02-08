@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:13.825613505Z","definition":{"id":"b40d645b798adefa","name":"graph_Laplacian","definition":"For a graph G = (V, E), the Laplacian matrix L = D - A where D is the diagonal degree matrix and A is the adjacency matrix. L is positive semidefinite with smallest eigenvalue 0.","created":"2026-02-08T13:57:13.824981562Z"}}

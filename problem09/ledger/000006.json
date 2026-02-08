@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:57:26.305104406Z","definition":{"id":"4d4cfa0ab5b4a2f2","name":"rank_one_scaling","definition":"The condition lambda_{abcd} = u_a v_b w_c x_d means the 4-way array lambda has tensor rank 1 (on the support of non-identical indices).","created":"2026-02-08T13:57:26.304403082Z"}}

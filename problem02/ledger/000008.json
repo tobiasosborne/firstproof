@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:41.262484331Z","definition":{"id":"615249fc84146062","name":"upper_triangular_unipotent","definition":"N_r is the subgroup of GL_r(F) consisting of upper-triangular matrices with 1s on the diagonal.","created":"2026-02-08T13:56:41.261782934Z"}}

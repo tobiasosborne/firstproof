@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:35.002426758Z","definition":{"id":"112e774913ec3ef0","name":"shift_map","definition":"For a smooth function psi: T^3 -\u003e R, the shift map T_psi: D'(T^3) -\u003e D'(T^3) is defined by T_psi(u) = u + psi, using the standard identification of smooth functions as distributions.","created":"2026-02-08T13:56:35.001802159Z"}}

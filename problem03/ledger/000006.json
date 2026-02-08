@@ -1,0 +1,1 @@
+{"type":"def_added","timestamp":"2026-02-08T13:56:46.496804911Z","definition":{"id":"a28aecb19c02ff6c","name":"interpolation_ASEP_polynomial","definition":"F*_mu(x_1,...,x_n; q, t) is the interpolation ASEP polynomial indexed by a composition mu, arising from the asymmetric simple exclusion process.","created":"2026-02-08T13:56:46.496198273Z"}}
