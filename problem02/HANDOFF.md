@@ -8,95 +8,91 @@ Let F be a non-archimedean local field, Π a generic irreducible admissible repr
 
 **YES.** The essential Whittaker function (new vector) W° of Π works.
 
-## Current State (Session 1)
+## Current State (Session 2)
 
-- **Proof tree:** 7 nodes (1 root + 6 children)
-- **All PENDING** — no adversarial verification yet
-- **5 external references** added
-- **6 definitions** inherited from initialization
+- **Proof tree:** 17 nodes (expanded from 7 in session 1)
+- **Validated:** 2 (Nodes 1.1, 1.2)
+- **Pending verification:** 15 new/amended nodes
+- **Challenges:** 14 raised in session 2, ALL 14 RESOLVED by provers
+- **Critical path:** `1 → 1.4 → 1.4.4 → 1.4.4.2` (depth 4)
 - **Run `af status`** from `problem02/` to see the full tree.
 
-## Proof Strategy
+## Session 2 Summary
 
-The proof has 6 steps, registered as nodes 1.1–1.6:
+### Verification Pass (breadth-first on all 7 original nodes)
+- **Node 1** (root): Structurally sound, no challenges
+- **Node 1.1** (Commutation Identity): VALIDATED ✓
+- **Node 1.2** (Algebraic Characterization): VALIDATED ✓
+- **Node 1.3** (Test Vectors): 1 critical challenge — unramified case not handled
+- **Node 1.4** (Iwasawa Unfolding): 4 challenges — torus collapse fails for n≥2, K-integral not a Gauss sum, missing deps, incomplete justification
+- **Node 1.5** (Gauss Sum): 5 challenges — undefined objects, type errors, wrong mechanism for n≥2
+- **Node 1.6** (QED): 4 challenges — false universality, missing deps, incomplete factorization, k never given
 
-### Node 1.1 — Commutation Identity (algebraic reduction)
-For g ∈ GL_n(F): W(diag(g,1)·u_Q) = ψ⁻¹(Q·g_{nn})·W(diag(g,1)).
+### Prover Wave (addressed all 14 challenges)
+All four challenged nodes were substantially rewritten:
 
-This is the foundational reduction. Conjugating u_Q past diag(g,1) produces n'(g,Q) ∈ N_{n+1} whose only superdiagonal entry contributing to ψ⁻¹ is Q·g_{nn} at position (n,n+1). The twist ψ⁻¹(Q·g_{nn}) is left-N_n-invariant, so the integrand remains well-defined.
+**Node 1.3** → Case split on conductor:
+- Ramified (c(π) ≥ 1): V = V° (new vector)
+- Unramified (c(π) = 0): V = V_0 (compact Kirillov support)
+- New children: 1.3.1 (V_0 construction), 1.3.2 (monomial proof for unramified case)
 
-**Difficulty:** Low. Pure matrix algebra + definition of Whittaker model.
+**Node 1.4** → "Iwasawa Unfolding and Conductor Analysis (Ramified Case)":
+- Dropped "Gauss sum" terminology; K-integral now "matrix-coefficient integral with partial additive twist"
+- W-factorization proved explicitly
+- New children: 1.4.1 (W-factorization), 1.4.2 (case a vanishing), 1.4.3 (conductor analysis), 1.4.4 (torus sum reduction), 1.4.4.1 (supercuspidal: single torus point), 1.4.4.2 (non-supercuspidal ramified: epsilon factor approach)
 
-### Node 1.2 — Algebraic Characterization of "Finite and Nonzero ∀s"
-A rational function R(q⁻ˢ) is finite and nonzero for all s ∈ ℂ iff R is a nonzero monomial c·q⁻ᵏˢ.
+**Node 1.5** → "Nonvanishing of Surviving Terms (Ramified Case)":
+- Removed undefined τ(π,ψ_Q) and "multiplicative character of π"
+- New children: 1.5.1 (K-integral nonvanishing, supercuspidal), 1.5.2 (epsilon factor nonvanishing, non-supercuspidal)
 
-Combined with JPSS theory (the integral is rational in q⁻ˢ), this sets the concrete target: show the integral is a nonzero monomial.
+**Node 1.6** → Three-case QED assembly with explicit dependencies, complete factorization, and explicit k(Π,π) values
 
-**Difficulty:** Low. Standard algebra of Laurent polynomials.
+## Proof Tree Structure
 
-### Node 1.3 — Choice of Test Vectors
-Set W = W° (essential Whittaker function of Π, depends only on Π). For each π, set V = V° (essential Whittaker function of π). Key property: W°(I_{n+1}) ≠ 0 (Matringe-Miyauchi).
-
-**Difficulty:** Low. Definitions + citation of Matringe (2013) and Miyauchi (2014).
-
-### Node 1.4 — Iwasawa Unfolding and Gauss Sum Extraction (CORE COMPUTATION)
-Using Iwasawa decomposition g = nak, the integral unfolds to a torus sum. The additive twist from Node 1.1 combined with K₁(𝔮)-invariance of V° produces a K-integral that is a generalized Gauss sum. Conductor-level analysis:
-- val(Q·ϖ^{m_n}) > 0 → twist trivial → K-integral vanishes (orthogonality)
-- val(Q·ϖ^{m_n}) < −c(π) → oscillation too rapid → K-integral vanishes (cancellation)
-- val(Q·ϖ^{m_n}) = −c(π) → conductors match → K-integral = nonzero Gauss sum
-
-Only the matched level survives → torus sum collapses to a single term → monomial.
-
-**Difficulty:** HIGH. This is the technical heart. Requires careful Iwasawa computation, tracking of support conditions for W° and V° on the torus, and the three-case conductor analysis.
-
-### Node 1.5 — Gauss Sum Nonvanishing
-The Gauss sum τ(π, ψ_Q) ≠ 0 because conductor of ψ_Q(x) = ψ(Qx) exactly matches conductor of π. Classical result (Tate thesis for GL₁; Godement-Jacquet for GL_n). The torus value W°(diag(a,1)) is nonzero by Matringe-Miyauchi.
-
-**Difficulty:** Medium. Requires precise statement and citation of epsilon factor theory.
-
-### Node 1.6 — QED: Conclusion and Uniformity
-Assembly: integral = c(Π,π)·q⁻ᵏ⁽ᐩ'ᵖⁱ⁾ˢ with c ≠ 0. This is a nonzero monomial (Node 1.2), hence finite and nonzero for all s. W° depends only on Π (Node 1.3); conductor matching is automatic from the definition of Q.
-
-**Difficulty:** Low (given Nodes 1.1–1.5).
+```
+1 [pending] Root conjecture
+├── 1.1 [VALIDATED] Commutation identity
+├── 1.2 [VALIDATED] Algebraic characterization (monomial iff)
+├── 1.3 [pending] Test vector choice (case split)
+│   ├── 1.3.1 [pending] Unramified test vector V_0 construction
+│   └── 1.3.2 [pending] Monomial proof for unramified case
+├── 1.4 [pending] Iwasawa unfolding (ramified case)
+│   ├── 1.4.1 [pending] W-factorization
+│   ├── 1.4.2 [pending] Case (a) vanishing
+│   ├── 1.4.3 [pending] Conductor analysis + fiber decomposition
+│   └── 1.4.4 [pending] Torus sum reduction
+│       ├── 1.4.4.1 [pending] Supercuspidal: single torus point
+│       └── 1.4.4.2 [pending] Non-supercuspidal ramified (epsilon factor) ← CRITICAL PATH
+├── 1.5 [pending] Nonvanishing of surviving terms (ramified)
+│   ├── 1.5.1 [pending] K-integral nonvanishing (supercuspidal)
+│   └── 1.5.2 [pending] Epsilon factor nonvanishing (non-supercuspidal)
+└── 1.6 [pending/qed] Three-case conclusion
+```
 
 ## What the Next Agent Should Do
 
-### Priority 1: Refine Node 1.1 (Commutation Identity)
-This is the easiest node and provides the foundation for everything else. Write out the explicit matrix computation. Verify left-N_n-invariance of the twist.
+### Priority 1: Verify the new child nodes (breadth-first)
+15 pending nodes need adversarial verification. Run verifiers breadth-first:
+- Depth 2: 1.3.1, 1.3.2, 1.4.1, 1.4.2, 1.4.3, 1.4.4, 1.5.1, 1.5.2
+- Depth 3: 1.4.4.1, 1.4.4.2
+- Then re-verify amended parents: 1.3, 1.4, 1.5, 1.6
+- Finally: root node 1
 
-### Priority 2: Refine Node 1.4 (Iwasawa Unfolding) — CRITICAL
-This is the hardest step. The agent should:
-1. Write the full Iwasawa decomposition of the integral
-2. Substitute the commutation identity from 1.1
-3. Perform the K-integral explicitly, separating into the three conductor cases
-4. Show the torus sum collapses
+### Priority 2: Scrutinize Node 1.4.4.2 (critical path)
+The non-supercuspidal ramified case is the weakest link. The prover acknowledged:
+- The connection between the u_Q-twisted integral and ε(s, Π×π, ψ) is "expected but not fully verified"
+- An alternative modified test vector approach is proposed but deferred
+- This node needs the most rigorous verification
 
-**Known vulnerability:** The torus-sum collapse may not be as clean for general n as it is for n = 1. The GL(2)×GL(1) case is straightforward (see backup below). For general n, the support properties of W° and V° on the torus (Matringe-Miyauchi formulas) must be invoked carefully.
+### Priority 3: Scrutinize Node 1.3.2 (unramified monomial proof)
+The argument that the twist vanishes and the integral collapses to W°(I)·∫_K V_0(k) dk needs checking:
+- Property (P1): torus support collapse via intersection of Casselman-Shalika and Kirillov supports
+- Property (P3): positivity of the K-integral at a = I_n
 
-### Priority 3: Refine Node 1.5 (Gauss Sum Nonvanishing)
-State the precise epsilon factor identity. Cite Godement-Jacquet or Tate.
-
-### Backup Strategy (if new vector W° fails for general n)
-If the new vector W° does not produce a monomial for all π, use the **Kirillov model approach**: choose W with Kirillov-model restriction φ = 1_{𝔬ⁿ} (characteristic function of 𝔬ⁿ). This lies in K(Π) for any generic Π by the Bernstein-Zelevinsky embedding S(Fⁿ \ {0}) ↪ K(Π). The compact support forces a finite torus sum, and V can be chosen (depending on π) to isolate a single level.
-
-### Unramified Case (c(π) = 0) — Special Handling
-When π is unramified, Q is a unit and the twist ψ⁻¹(Q·g_{nn}) is trivial on GL_n(𝔬). The integral reduces to the standard RS integral. If W = W° produces L(s, Π×π) (which may have poles), choose V ≠ V° from W(π, ψ) with compact Kirillov support to get a monomial instead.
-
-## Key Insights from Strategy Development
-
-Three independent strategies were evaluated:
-
-1. **Strategy A (L-functions + essential vectors):** Most concrete. Proposes W = W° and explicit Matringe-Miyauchi computation. Risk: torus collapse hand-waved for general n.
-
-2. **Strategy B (Kirillov model + Gauss sums):** Best foundational computation (the commutation identity). Uses Kirillov model rather than new vector, giving more flexibility. Risk: Claim 6.2 for n ≥ 2 unfinished.
-
-3. **Strategy C (Bernstein center + Baire category):** Most abstract. Existential proof via distributional argument. Risk: multiple gaps, lowest confidence (65%).
-
-The synthesized strategy takes the **commutation identity from B**, the **explicit new-vector choice from A**, and keeps the **Kirillov model fallback from B/C** in reserve.
-
-## Key Pitfall: Why u_Q Is Not Just a Right-Translation
-
-It is tempting to treat the u_Q-modified integral as simply a standard RS integral with R(u_Q)W in place of W. While formally correct, this obscures the mechanism: R(u_Q)W depends on Q, which depends on π. The commutation identity (Node 1.1) is more useful because it separates the pi-dependent part (the additive twist ψ⁻¹(Q·g_{nn})) from the pi-independent part (W(diag(g,1))).
+### Known Remaining Weaknesses
+1. **Node 1.4.4.2:** Non-supercuspidal ramified case — epsilon factor identification not fully proved
+2. **Node 1.5.2:** Depends on 1.4.4.2's output being well-defined
+3. **Dependency declarations:** Nodes 1.4 and 1.5 have textual (not metadata) dependency declarations due to af tool limitations
 
 ## Definitions in Scope
 
@@ -125,6 +121,8 @@ af refine <id> --owner X -s "..."  # add proof content
 af release <id> --owner X          # release claim
 af defs                            # list definitions
 af externals                       # list references
+af challenges                      # list all challenges
+af jobs                            # see available work
 ```
 
 Note: Run all commands from the `problem02/` directory.
