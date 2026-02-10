@@ -1,0 +1,1 @@
+{"type":"challenge_raised","timestamp":"2026-02-10T13:48:19.964233751Z","challenge_id":"ch-053def23083dc3f3","node_id":"1.5","target":"gap","reason":"UNIQUENESS NOT ESTABLISHED: 'THE stationary distribution' presupposes irreducibility, which is unproven (Node 1.4 was challenged on this). At t=1 the chain is the identity, so uniqueness fails.","severity":"major","raised_by":""}
