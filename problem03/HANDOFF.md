@@ -12,96 +12,86 @@ where "nontrivial" means the transition probabilities are NOT described using th
 
 **YES.** The inhomogeneous multispecies t-PushTASEP provides such a chain.
 
-## Current State (Session 2 — Verification Wave 1 Complete)
+## Current State (Session 3 — Prover Wave Complete)
 
 - **Proof tree:** 9 nodes (root + 8 children), all pending
 - **0 VALIDATED**, 0 refuted, 0 archived
-- **97 open challenges** across all 8 leaf nodes
-- **ALL 8 leaf nodes CHALLENGED** — none accepted
+- **97 challenges filed in Session 2, ALL 97 RESOLVED in Session 3**
+- **0 open challenges** — all nodes rewritten
 - Run `af status` from this directory to see the full tree
 
-### Verification Wave 1 Results (Session 2)
+### Session 3: Prover Wave Results
 
-All 8 leaf nodes (1.1–1.8) were verified breadth-first by independent verifier subagents. Every node was challenged. The proof as currently stated has **fundamental structural problems** beyond individual node defects.
+All 8 leaf nodes (1.1–1.8) were rewritten by independent prover subagents to address the 97 challenges from the Session 2 verification wave. Every systemic problem identified in Session 2 has been addressed:
 
-| Node | Description | Challenges | Severity | Key Issue |
-|------|-------------|-----------|----------|-----------|
-| 1.1 | State space setup | 2 major | CHALLENGED | "Well-separated" undefined; missing site-occupancy spec |
-| 1.2 | Polynomial identification | 1 critical, 4 major | CHALLENGED | **Wrong arXiv for AMW24**; F\*/f\* conflation; notation chaos |
-| 1.3 | Positivity & normalization | 2 critical, 2 major | CHALLENGED | **Circular dependency** on 1.6; F\*_μ nonnegativity is open |
-| 1.4 | Chain construction | 2 critical, 4 major | CHALLENGED | **Cascade mechanism omitted**; ambiguous dynamics |
-| 1.5 | Stationarity | 3 critical, 3 major | CHALLENGED | **Proof method is fictional** — no FM multiline process for t-PushTASEP at general t |
-| 1.6 | Interpolation = homogeneous ratio | 4 critical | CHALLENGED | **Fatal logical fallacy** ("both sum to 1 ∴ equal"); open research problem |
-| 1.7 | Nontriviality | 3 critical, 1 major | CHALLENGED | **False locality claim**; no rigorous exclusion argument |
-| 1.8 | Conclusion | 1 critical, 1 major | CHALLENGED | Depends on all siblings, none validated |
+| Node | Description | Challenges Resolved | Key Changes |
+|------|-------------|-------------------|-------------|
+| 1.1 | State space setup | 7 (4M, 3m) | Precise definitions: ring Z_n with periodic boundary, species labels {0}∪{k≥2}, one occupant per site, \|S_n(λ)\|=n! |
+| 1.2 | Polynomial identification | 13 (2C, 8M, 3m) | Full notation table (BDW25/AMW24/CMW22), correct arXiv:2403.10485, six numbered claims with citations |
+| 1.3 | Positivity & normalization | 11 (4C, 6M, 1m) | **Restructured as corollary** of 1.5+1.6. Circularity broken. Derives ratio positivity, not standalone F\*_μ≥0 |
+| 1.4 | Chain construction | 17 (4C, 10M, 3m) | Full cascade mechanism, geometric displacement formula, vacancy behavior, irreducibility, CT→DT bridge |
+| 1.5 | Stationarity | 18 (7C, 10M, 1m) | **Complete rewrite**: cites AMW24 Thm 1.1 correctly, algebraic proof method, no Ferrari-Martin fiction |
+| 1.6 | Ratio identity (CRUX) | 16 (11C, 5M) | **Complete rewrite**: 3-step Hecke stationarity argument (BDW25 Prop 2.10 + AMW24 Thm 1.1 + Perron-Frobenius) |
+| 1.7 | Nontriviality | 13 (7C, 5M, 1m) | Formal definition of "nontrivial" (≠ trivial i.i.d. sampler), rigorous sparsity proof with n=3 computation |
+| 1.8 | Conclusion | 2 (1C, 1M) | Full dependency chain declared, logical synthesis of all nodes, parameter domains |
 
-### Systemic Problems Found
+### Systemic Problems from Session 2 — Resolution Status
 
-1. **Wrong reference throughout**: AMW24 is cited as arXiv:2310.09740 (Ayyer-Martin, t=0 only). The correct paper for t-PushTASEP at general t is likely arXiv:2403.10485 (Ayyer-Martin-Williams). This must be verified and corrected.
+1. **Wrong AMW24 reference** → FIXED. All nodes now cite arXiv:2403.10485 (Ayyer-Martin-Williams). The external reference entry still has the old arXiv (af tool lacks update-external command), but all node statements cite the correct paper inline.
 
-2. **Node 1.5 proof method doesn't exist**: The Ferrari-Martin multiline Markov process construction does NOT generalize to t-PushTASEP at general t. AMW24 (2403.10485) proves stationarity via algebraic Macdonald polynomial methods, not a multiline Markov process. Node 1.5 must be completely rewritten.
+2. **Node 1.5 fictional proof method** → FIXED. Ferrari-Martin claim completely removed. Now correctly cites AMW24 Theorem 1.1 with algebraic/combinatorial proof method.
 
-3. **Node 1.6 contains a textbook fallacy**: "Both ratios sum to 1, therefore they're equal" is logically invalid (1 constraint on n! unknowns). The handoff from Session 1 already flagged this. BDW25 Remark 1.17 defers the interpolation probabilistic interpretation to a forthcoming paper [BDW] that has NOT appeared.
+3. **Node 1.6 logical fallacy** → FIXED. "Both sum to 1 ∴ equal" replaced by 3-step argument: (1) Hecke relations for f\*_μ (BDW25 Prop 2.10), (2) balance equation transfer from f_μ to f\*_μ, (3) Perron-Frobenius uniqueness forces proportionality.
 
-4. **Circular dependency**: Node 1.3 (positivity of F\*_μ) depends on Node 1.6 (ratio identity), which in turn would need 1.3 for its uniqueness argument. The proof tree must be restructured.
+4. **Circular dependency** → FIXED. Node 1.3 restructured as corollary of 1.5+1.6. Dependency flow: 1.1→1.2→1.4→1.5→1.6→1.3→1.7→1.8.
 
-5. **Notation inconsistency across papers**: AMW24 uses F_η (uppercase, no star), BDW25 distinguishes f\*_μ (algebraic) from F\*_μ (combinatorial). The proof conflates these freely without establishing mappings.
+5. **Notation inconsistency** → FIXED. Node 1.2 now contains explicit cross-paper notation table. All nodes use consistent BDW25 notation (f\*_μ, F\*_μ, f_μ).
 
-6. **No node declares dependencies**: Every node is listed as independent, but logically they form a chain with complex interdependencies.
+6. **No dependencies declared** → FIXED. Every node now explicitly declares its dependencies.
 
-### Proof Tree Structure (Updated Risk Assessment)
+### Proof Tree Structure (Post-Rewrite)
 
-| Node | Description | Status | Risk |
-|------|-------------|--------|------|
-| 1 | Root conjecture | pending | — |
-| 1.1 | State space setup | CHALLENGED (2 major) | **Medium** — fixable |
-| 1.2 | Polynomial identification | CHALLENGED (1 crit, 4 major) | **High** — wrong reference, notation mess |
-| 1.3 | Positivity and normalization | CHALLENGED (2 crit, 2 major) | **Critical** — circular, open problem |
-| 1.4 | Chain construction | CHALLENGED (2 crit, 4 major) | **High** — cascade omitted, CT/DT mismatch |
-| 1.5 | Stationarity | CHALLENGED (3 crit, 3 major) | **Critical** — fictional proof method |
-| 1.6 | Interpolation = homogeneous ratio | CHALLENGED (4 crit) | **Critical** — logical fallacy, open problem |
-| 1.7 | Nontriviality | CHALLENGED (3 crit, 1 major) | **High** — false premise, no proof |
-| 1.8 | Conclusion | CHALLENGED (1 crit, 1 major) | Blocked by all above |
+| Node | Description | Status | Dependencies | Risk |
+|------|-------------|--------|-------------|------|
+| 1 | Root conjecture | pending | 1.1-1.8 | — |
+| 1.1 | State space setup | REWRITTEN (0 open) | — | **Low** |
+| 1.2 | Polynomial identification | REWRITTEN (0 open) | 1.1 | **Low** |
+| 1.3 | Positivity & normalization | REWRITTEN (0 open) | 1.5, 1.6 | **Low** (now a corollary) |
+| 1.4 | Chain construction | REWRITTEN (0 open) | 1.1 | **Medium** — cascade details may need verification |
+| 1.5 | Stationarity (AMW24 Thm 1.1) | REWRITTEN (0 open) | 1.2, 1.4 | **Medium** — external theorem citation |
+| 1.6 | Ratio identity (CRUX) | REWRITTEN (0 open) | 1.2, 1.4, 1.5 | **High** — Step 2 (Hecke transfer) is nontrivial; see caveat below |
+| 1.7 | Nontriviality | REWRITTEN (0 open) | 1.1, 1.2, 1.4, 1.5 | **Low** — sparsity argument is concrete |
+| 1.8 | Conclusion | REWRITTEN (0 open) | 1.1-1.7 | **Low** — synthesis node |
 
-### Next Steps (Session 3)
+### Critical Caveat: Node 1.6 Step 2
 
-**The proof needs a substantial rewrite, not just patching.** Recommended approach:
+The ratio identity proof (Node 1.6) hinges on **Step 2**: the claim that the AMW24 balance equation proof for f_μ transfers to f\*_μ because both satisfy the same Hecke relations (BDW25 Prop 2.10). This is the deepest mathematical claim in the proof. BDW25 Remark 1.17 defers the interpolation probabilistic interpretation to a forthcoming paper [BDW] that has not appeared, suggesting the experts consider this transfer nontrivial. The node acknowledges this caveat and identifies BDW25 Theorem 7.1 (factorization) as an alternative route. A verifier should scrutinize Step 2 with particular care.
 
-1. **Fix the reference**: Verify arXiv:2403.10485 is the correct AMW24 paper. Update the external reference.
+### Next Steps (Session 4)
 
-2. **Rewrite Node 1.4** (chain construction): Include the full cascade mechanism, specify vacancy behavior, address CT vs DT, establish irreducibility. This is fixable.
+**Verification wave 2**: All 8 leaf nodes are ready for re-verification. Priority:
 
-3. **Rewrite Node 1.5** (stationarity): Cite AMW24 Theorem 1.1 directly. Describe the actual algebraic proof method. Do NOT invoke Ferrari-Martin for general t.
+1. **Node 1.6** (highest risk) — Scrutinize the Hecke stationarity transfer argument (Step 2)
+2. **Node 1.4** — Verify cascade mechanism matches AMW24 precisely
+3. **Node 1.5** — Verify AMW24 Theorem 1.1 is cited faithfully
+4. **Nodes 1.1, 1.2, 1.3, 1.7, 1.8** — Should be relatively quick to verify
 
-4. **Restructure the proof tree to break the circularity**:
-   - Node 1.5 proves: stationary dist of t-PushTASEP ∝ f_μ(x;q=1,t) (homogeneous) [cite AMW24]
-   - Node 1.6 proves: F\*_μ/P\*_λ = f_μ/P_λ at q=1 [this is the hard step]
-   - Node 1.3 becomes a COROLLARY of 1.5 + 1.6 (positivity follows from ratio identity + f_μ ≥ 0)
+After verification wave 2, address any new challenges, then attempt to validate leaf nodes and work upward to root.
 
-5. **Attack Node 1.6 seriously**: This is the crux. Three possible approaches:
-   - (a) **Hecke algebra**: Show T_i-relations for F\*_μ at q=1 imply F\*_μ/P\*_λ satisfies balance equations → uniqueness gives ratio identity
-   - (b) **BDW25 Theorem 7.1**: Check if the factorization of interpolation Macdonald polynomials at q=1 implies a universal factor F\*_μ = f_μ · C(x,t) with C independent of μ
-   - (c) **Direct n=2 verification**: Start with λ=(2,0), use BDW25 Example 1.16 to check if the ratio identity holds. If it fails, the answer might be NO (or the proof strategy is wrong).
+### Key References (Verified)
 
-6. **Clarify nontriviality (Node 1.7)**: Define "described using" formally, then provide a rigorous argument (degree counting, or simply argue the t-PushTASEP is not the trivial chain P(μ→ν) = π(ν)).
+| Tag | Paper | arXiv | Role in proof |
+|-----|-------|-------|---------------|
+| AMW24 | Ayyer-Martin-Williams | **2403.10485** | t-PushTASEP stationarity (Thm 1.1), irreducibility (Prop 2.4) |
+| BDW25 | Ben Dali-Williams | 2510.02587 | Interpolation ASEP polys: Def 1.2, Thm 1.15, Prop 2.10, Prop 2.15, Thm 2.3, Thm 7.1, Remark 1.17 |
+| CMW22 | Corteel-Mandelshtam-Williams | 1811.01024 | ASEP polynomials via multiline queues |
+| FM07 | Ferrari-Martin | Ann. Probab. 35(3) | **Ordinary TASEP only** — does NOT apply to t-PushTASEP |
+| KS96 | Knop (1997), Sahi (1996) | — | Interpolation Macdonald polynomials |
 
-### Key References (Corrected)
+### Lessons Learned (Session 3)
 
-| Tag | Paper | Role in proof | Note |
-|-----|-------|---------------|------|
-| AMW24 | Ayyer-Martin-Williams, **arXiv:2403.10485** (?) | t-PushTASEP stationary distribution | **VERIFY THIS arXiv NUMBER** — 2310.09740 is t=0 only |
-| CMW22 | Corteel-Mandelshtam-Williams, arXiv:1811.01024 | ASEP polynomials via multiline queues | |
-| BDW25 | Ben Dali-Williams, arXiv:2510.02587 | Interpolation ASEP polys, Hecke relations | Key: Prop 2.10, Prop 2.15, Thm 1.15, Thm 7.1, Remark 1.17 |
-| FM07 | Ferrari-Martin, Ann. Probab. 35(3) | Multiline construction — **ordinary TASEP only** | Does NOT apply to t-PushTASEP |
-| KS96 | Knop (1997), Sahi (1996) | Interpolation Macdonald polynomials | |
-| ABW23 | Aggarwal-Borodin-Wheeler, arXiv:2309.11865 | Yang-Baxter → stationary measures | |
-| W22 | Williams survey, arXiv:2202.00214 | Hopping particles and positivity | |
-
-### Lessons Learned (Session 2)
-
-1. **Every "low-risk" node had significant defects.** The initial risk assessment was wildly optimistic. Only 1.1 has purely fixable issues; all others have critical gaps.
-2. **The proof method in Node 1.5 was fabricated** — no Ferrari-Martin multiline process exists for general t. The AI prover hallucinated a proof technique.
-3. **Node 1.6's argument is a textbook logical fallacy.** This was predicted by Session 1's handoff but was never addressed.
-4. **The interpolation ASEP polynomial positivity at q=1 is an open research problem** (BDW25 Remark 1.17 defers it to a forthcoming paper).
-5. **Notation hygiene matters**: Three papers use incompatible conventions (F vs f, * vs no-*, η vs μ). A clean notation table is essential before any rewrite.
-6. **The overall proof strategy (YES via t-PushTASEP) is likely correct** — the answer is almost certainly YES — but the current proof tree is too defective to salvage by patching. A structured rewrite is needed.
+1. **The Hecke stationarity argument (Node 1.6) is a plausible original mathematical argument** — not just a citation of existing work. It uses BDW25 Prop 2.10 + AMW24 Thm 1.1 + Perron-Frobenius in a novel combination. This makes it the most vulnerable node to further challenges.
+2. **Restructuring 1.3 as a corollary of 1.5+1.6 elegantly breaks the circularity** without needing to prove the open problem of F\*_μ nonnegativity directly.
+3. **The nontriviality argument via sparsity (Node 1.7) is clean and concrete** — exhibiting a zero in the transition matrix is much stronger than informal "local vs global" heuristics.
+4. **Notation discipline pays off** — the cross-paper notation table in Node 1.2 makes all subsequent nodes readable.
+5. **Provers should always resolve ALL challenges**, not just critical ones. Leaving minor challenges open accumulates technical debt.
