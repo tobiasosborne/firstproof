@@ -18,9 +18,36 @@ Key features of the benchmark:
 
 ### What This Repo Does
 
-The `af` tool uses an adversarial prover/verifier protocol to decompose conjectures into proof trees. An AI agent proposes proof steps, and a separate agent attempts to find flaws. **This process is heuristic and fallible** — the adversarial structure reduces but does not eliminate the risk of unsound arguments.
+The `af` tool uses an adversarial prover/verifier protocol to decompose conjectures into proof trees. An AI agent proposes proof steps, and a separate agent attempts to find flaws. **This process is heuristic and fallible** -- the adversarial structure reduces but does not eliminate the risk of unsound arguments.
 
 This repo is a test bed for `af` on hard, real-world mathematical problems whose answers are independently verifiable.
+
+### How the `af` Tool Works
+
+The `af` (Adversarial [proof] Framework) command-line tool manages structured proof trees via a prover/verifier protocol. For the uninitiated mathematician, the workflow is:
+
+1. **Initialization.** A conjecture is registered as the root node of a proof tree (`af init`). Definitions, external references (published theorems), and assumptions are declared.
+
+2. **Decomposition.** The prover decomposes the conjecture into sub-claims (child nodes), each with a precise mathematical statement, inference type, and dependencies on sibling nodes. This creates a tree: proving all children establishes the parent.
+
+3. **Adversarial verification.** A separate verifier agent examines each node and raises *challenges* -- formal objections classified by severity (critical, major, minor). Challenges target the statement, inference, gaps, or dependencies. The prover must resolve each challenge by amending the node or refining it into further children.
+
+4. **Epistemic states.** Each node carries an epistemic label: *pending* (unexamined), *validated* (survived adversarial scrutiny), *refuted* (a challenge disproved it), or *archived* (superseded by a repair). A *taint* flag propagates upward from unresolved challenges.
+
+5. **Iteration.** Multiple prover/verifier waves are run. Refuted nodes are repaired (new children or amended statements), and the tree grows until all leaves are validated or the proof is recognized as incomplete.
+
+The result is not a proof in the formal sense -- it is a structured *proof exploration* that records not only the claimed argument but also the dead ends, counterexamples, and refuted approaches discovered along the way. Each `problemNN/ledger/` directory contains the full history as timestamped JSON entries. LaTeX reports (`report.tex`, `report.pdf`) and handoff documents (`HANDOFF.md`) summarize the state for human readers.
+
+### Why Multi-Shot Exploration Matters
+
+A single-shot proof attempt by an AI system is unlikely to produce a correct proof of a research-level problem. The *First Proof* authors themselves observed that frontier models struggle in this setting. The value of the `af` approach is precisely that it is *not* single-shot:
+
+- **Dead ends are recorded.** When a proof strategy fails, the refutation is preserved. This prevents future attempts (human or AI) from repeating the same mistake. Several problems below have catalogued 5--12 distinct pitfalls that constrain any future proof.
+- **Counterexamples are found.** The adversarial verifier has discovered concrete counterexamples to plausible-sounding intermediate claims (e.g., that certain continuum free-probability identities hold at finite n -- they do not).
+- **Partial progress is real.** Even where a complete proof is not obtained, validated sub-results (Wick expansion identities, vertex classification lemmas, base-case proofs) represent genuine mathematical content that would survive independent verification.
+- **The proof tree is a map.** For a human mathematician approaching one of these problems, the `af` tree provides an annotated map of the mathematical landscape: what has been tried, what works, what fails, and where the genuine difficulties lie.
+
+Were we to have had more token budget and time, it is plausible that some of these proof trees could have been driven to completion -- particularly Problems 1, 3, and 8, which are close. Whether a fully formalized proof (in Lean 4 or otherwise) could have been obtained in this way remains an open and interesting question.
 
 ## The 10 Problems
 
@@ -37,19 +64,186 @@ This repo is a test bed for `af` on hard, real-world mathematical problems whose
 | 9 | Algebraic relations on quadrilinear determinantal tensors | Kileel | Tensor analysis |
 | 10 | Preconditioned CG for CP decomposition with RKHS constraints | Kolda | Numerical linear algebra |
 
+## Progress Summary
+
+Six of the ten problems have been investigated using the `af` tool. The table below summarizes the state of each. Problems 6, 7, 9, and 10 have not yet been attempted.
+
+| # | Problem | Sessions | Nodes | Validated | Refuted | Challenges | Status |
+|---|---------|----------|-------|-----------|---------|------------|--------|
+| 1 | Phi^4_3 measure equivalence | 4 | 84 | 21 | 8 (all repaired) | 343 ledger entries | ~85--90% complete |
+| 2 | Whittaker functions | 3 | 17 | 5 | 0 | 71 (57 open) | ~29% complete, stuck |
+| 3 | ASEP Markov chain | 3 | 9 | 0 | 0 | 97 (all resolved) | Structurally complete, awaiting verification |
+| 4 | Finite free Stam inequality | 7+ | 24 | 0 | 0 | Extensive | Open for n >= 4; n <= 3 proved |
+| 5 | Slice filtration | 2 | 11 | 0 | 0 | 45 (all open) | Early stage, foundational definition broken |
+| 8 | Lagrangian smoothing | 7 | 9 | 2 | 0 | 90 (84 resolved) | ~55--65% confidence in proof |
+
+---
+
+### Problem 1: Equivalence of the Phi^4_3 Measure Under Smooth Shifts
+
+**Field:** Stochastic analysis / Constructive QFT | **Author:** Martin Hairer
+
+**Question.** Let mu be the Phi^4_3 measure on the 3-torus. Is mu equivalent (mutually absolutely continuous) to its pushforward T_psi\*mu under a smooth nonzero shift psi?
+
+**Claimed answer:** YES.
+
+**State of the proof.** This is the most developed proof in the repository. Across 4 adversarial sessions, the proof tree has grown to 84 nodes. Of these, 21 have been validated through adversarial verification, 8 were refuted (all repaired or superseded), and 6 are archived. The proof proceeds by constructing an explicit Radon-Nikodym derivative via UV regularization in four stages:
+
+- **Stage A (Regularized RN derivative):** Fully validated. The explicit formula for the regularized density R_eps and the Cameron-Martin setup are established.
+- **Stage B (Wick expansion):** Fully validated. Four nodes covering quartic/quadratic Wick shifts, interaction difference, and UV divergence analysis all passed adversarial verification.
+- **Stage C (Renormalization):** Fully validated. The decomposition Psi_eps = Psi^ren + L_eps + K_eps, normalization, L^p convergence of Psi^ren, and divergent linear term absorption are all established.
+- **Stage C' (Convergence):** Partially validated. Exponential integrability -- the hardest technical result -- survived 4 repair cycles and 7 sub-refutations before being fully resolved. Uniform integrability is partially validated.
+- **Stage D (Conclusion):** Not yet attempted (strict positivity and symmetry; both expected to be straightforward).
+
+**The sole remaining hard step** is node 1.6.4.3.3: identifying T_psi\*mu = (exp(Psi^ren)/Z) * mu via a Boue-Dupuis variational argument. The conditional expectation identity at the heart of this step is sketched but not rigorously justified.
+
+**Dead ends found (10 refutations):** Direct L^p bounds on R_eps (diverge for p > 1); Wick-to-raw power decomposition; BG concentration on enhanced data (applies only to phi, not Wick powers); tilted measure convergence mu_eps^L -> mu (tightness fails because divergent linear tilt shifts the mean by ~(log 1/eps)^{1/3}; wrong limit because Z_2-breaking cubic terms change the measure); fabricated Polchinski flow citations. Twelve pitfalls are catalogued in the HANDOFF document.
+
+**What remains:** Verify the Boue-Dupuis identification (node 1.6.4.3.3), verify routine uniform integrability nodes (1.6.3.2, 1.6.3.3, 1.6.3.8), prove strict positivity and symmetry (trivial), close wrapper nodes.
+
+---
+
+### Problem 2: Existence of Whittaker Functions for Rankin-Selberg Integrals
+
+**Field:** Representation theory / Automorphic forms | **Author:** Paul D. Nelson
+
+**Question.** For a generic irreducible admissible representation Pi of GL_{n+1}(F) over a non-archimedean local field, does there exist a universal Whittaker function W such that for every generic pi of GL_n(F), a suitable test vector V makes the Rankin-Selberg integral I(s) finite and nonzero for all s?
+
+**Claimed answer:** YES -- the essential Whittaker function (new vector) W^circ works universally.
+
+**State of the proof.** The proof tree has 17 nodes across 3 sessions. Five nodes are validated: the root (likely premature auto-propagation), the commutation identity, the algebraic monomial characterization, the W^circ factorization, and the Case (a) vanishing. The remaining 12 nodes are all pending with 57 open challenges.
+
+**The proof is stuck.** Five systematic issues block progress:
+
+1. **Kirillov model evaluation (foundational):** The proof repeatedly evaluates V_0(ak) via pointwise Kirillov model functions for elements k outside the mirabolic subgroup P_n. This is invalid for n >= 2 -- the Kirillov model realizes pi|_{P_n} on functions on F^{n-1} \ {0}, and evaluation for arbitrary k requires the full representation action.
+2. **Casselman-Shalika scope:** The formula is invoked for possibly ramified Pi, but it applies only to unramified representations.
+3. **K-projection dilemma:** For unramified pi, the K-average of V_0 either vanishes (failing nonvanishing) or is proportional to V^circ (reproducing L-function poles).
+4. **Test vector theory for general GL_{n+1} x GL_n:** The epsilon-factor identification is only established for GL_2.
+5. **J_K(0) nonvanishing for n >= 2:** The Fourier coefficient argument does not extend from n = 1.
+
+**Dead ends found:** Using V^circ for unramified pi (yields L-function with poles); treating the K-integral as a Gauss sum for n >= 2 (it is a matrix-coefficient integral); pointwise Kirillov evaluation off the mirabolic (fundamentally incorrect); circular reasoning in nonvanishing arguments.
+
+**What remains:** Repair the Kirillov model argument (bypass pointwise evaluation using the Bernstein-Zelevinsky exact sequence), prove J_K(0) nonvanishing via finite group representation theory, handle the non-supercuspidal case via functional equation or multiplicativity reduction.
+
+---
+
+### Problem 3: Markov Chain with ASEP Polynomial Stationary Distribution
+
+**Field:** Algebraic combinatorics | **Author:** Lauren Williams
+
+**Question.** Given a restricted partition lambda with distinct parts, does there exist a nontrivial Markov chain on the set of compositions whose stationary distribution is given by interpolation ASEP polynomial ratios F\*_mu / P\*_lambda at q = 1?
+
+**Claimed answer:** YES -- the inhomogeneous multispecies t-PushTASEP provides such a chain.
+
+**State of the proof.** The proof tree has 9 nodes (1 root + 8 children) across 3 sessions. Despite 97 challenges being raised and all 97 resolved, zero nodes have been formally validated -- the proof awaits a second verification wave.
+
+The proof rests on a **ratio identity**: f\*_mu/P\*_lambda = f_mu/P_lambda (interpolation ratio equals homogeneous ratio). Since the t-PushTASEP is known (AMW24) to have stationary distribution proportional to f_mu, the identity implies it also has the desired interpolation ratio as its distribution.
+
+**The crux is Node 1.6 (ratio identity),** which argues via Hecke stationarity transfer: both f\*_mu and f_mu satisfy the same Hecke relations, the AMW24 balance proof uses only these relations, so Perron-Frobenius uniqueness forces proportionality. This is a novel mathematical argument. BDW25 Remark 1.17 explicitly defers this result to a forthcoming paper, indicating even the experts consider it nontrivial.
+
+**Dead ends found:** Ferrari-Martin multiline Markov processes (the LLM prover fabricated this -- FM07 applies only to ordinary TASEP); standalone F\*_mu >= 0 proof (this is actually an open problem); the logical fallacy "both sum to 1, therefore equal"; false locality claims for nontriviality.
+
+**What remains:** Run a second verification wave on all 9 nodes (all are ready, 0 open challenges). If Node 1.6 survives, the proof is essentially complete. If challenged, four fallback strategies exist: AMW24 line-by-line audit, BDW25 factorization route, direct q = 1 specialization, or awaiting the forthcoming [BDW] paper.
+
+---
+
+### Problem 4: Superadditivity of Inverse Fisher Information under Finite Free Convolution
+
+**Field:** Spectral theory / Finite free probability | **Author:** Nikhil Srivastava (with Dan Spielman)
+
+**Conjecture.** For monic real-rooted polynomials p, q of degree n with simple roots: 1/Phi_n(p boxplus_n q) >= 1/Phi_n(p) + 1/Phi_n(q), where Phi_n is the finite free Fisher information and boxplus_n is the MSS finite free additive convolution. This is the finite-n analogue of Voiculescu's free Stam inequality.
+
+**Claimed answer:** Believed TRUE based on 2,000,000+ numerical trials with zero violations, but **no complete proof exists** for general n >= 4.
+
+**State of the proof.** This problem received the most computational effort: two independent proof campaigns (434 + 238 archived files, ~28,000 lines of Python verification code, 25+ AI prover/verifier agents), synthesized into a 24-node proof tree. Five nodes are admitted (proved): foundations (Phi_n = 2 * sum 1/(lambda_i - lambda_j)^2), base cases (n <= 3 and n = 4 symmetric), the chain rule at roots, L^2 Pythagoras decomposition, and Gaussian splitting.
+
+**Three independent proof paths exist** (any one suffices):
+
+- **Path A (Subordination + L^2 contraction):** Adapts the Shlyakhtenko-Tao analytic proof. Blocked by subordination existence and a Herglotz coupling lemma that "may be as hard as the original conjecture in different language."
+- **Path B (De Bruijn + 1/Phi concavity):** Follows the classical entropy power template. Blocked by proving 1/Phi_n is concave along the heat flow. Identified as the most tractable approach.
+- **Path C (Entropy power inequality):** Blocked by proving a finite free EPI. Has the strongest numerical support (0/13,770 violations).
+
+**Dead ends found (do not retry):** The inner product <h, alpha> >= 0 is FALSE (counterexamples at n >= 3); the partition of unity omega_p' + omega_q' = 1 is FALSE; the continuum subordination coupling relation FAILS at finite n; monotone gap along heat flow is FALSE (44% violation rate); joint concavity of -R_4 is FALSE (indefinite Hessian); SOS decomposition has mixed-sign cross terms for n >= 4. **Key lesson:** many continuum free probability identities break at finite n. The proof must be genuinely finite-dimensional.
+
+**What remains:** Solve any ONE of the three hard steps (1/Phi concavity, subordination existence, or finite free EPI). The problem is genuinely difficult and may require a new structural insight.
+
+---
+
+### Problem 5: Slice Filtration for Incomplete Transfer Systems
+
+**Field:** Algebraic topology / Equivariant homotopy theory | **Author:** Andrew J. Blumberg
+
+**Question.** Define the slice filtration on the G-equivariant stable category adapted to an incomplete transfer system O, and prove a characterization of O-slice connectivity via geometric fixed points.
+
+**State of the proof.** This is the least developed proof: 11 nodes across 2 sessions, 0% completion, quality score 30/100. All 45 challenges are open; none have been resolved. Every leaf node is blocked.
+
+**The proof is fundamentally broken** at its foundation. The definition of the "O-admissible family" F_O (node 1.1) collapses: since the identity transfer tr_G^G is in every transfer system, the family generated by Sub_O^tr(G) always includes G, so F_O = Sub(G) for *every* transfer system O. The proposed O-slice filtration is therefore identical to the standard HHR regular slice filtration regardless of O, making the generalization vacuous.
+
+**Additional errors:** The geometric fixed point formula is wrong (gives a wedge of spheres, not a single sphere); the categorical framework confuses localizing and colocalizing subcategories; the proof nodes contain sketches rather than arguments; the critical RO(H)-to-integer-graded transition is entirely unjustified.
+
+**What remains:** A fundamentally reworked definition of F_O, likely based on indexing systems (Blumberg-Hill 2015, Rubin 2021) rather than simple transfer extraction, followed by cascading repairs through all downstream nodes. This amounts to restarting the proof.
+
+---
+
+### Problem 8: Lagrangian Smoothing of Polyhedral Lagrangian Surfaces
+
+**Field:** Symplectic geometry | **Author:** Mohammed Abouzaid
+
+**Question.** Does a polyhedral Lagrangian surface K in (R^4, omega_std) with exactly 4 faces at every vertex necessarily have a Lagrangian smoothing (a Hamiltonian isotopy of smooth Lagrangians converging topologically to K)?
+
+**Claimed answer:** YES (with 70--75% confidence).
+
+**State of the proof.** The proof tree has 9 nodes across 7 sessions -- the most iterated proof in the repository. Two nodes are validated: the vertex classification (all 4-face vertices are Sp(4,R)-equivalent to a unique normal form) and the edge smoothing (product Lagrangian construction, automatically Lagrangian with no Moser correction needed). The remaining 7 nodes are pending with 0 substantive open challenges, but none have been re-verified since their latest rewrites.
+
+The proof has been significantly reworked across sessions:
+
+- **Sessions 1--2:** Tropical resolution / Matessi-Mikhalkin pair-of-pants approach. Abandoned (inapplicable to generic 4-face vertices).
+- **Sessions 3--4:** Cotangent generating functions with angular partition of unity. Abandoned (not C^2 at the origin due to Fourier mode obstruction).
+- **Sessions 5--7 (current):** Two-zone construction. Set F = 0 in the inner zone (|X| < epsilon), eliminating the origin smoothness problem entirely. Transition via flat cutoff. This is a genuine mathematical insight.
+
+**Dead ends found:** Tropical resolution (wrong combinatorial structure); Polterovich surgery neck formula (wrong context for 4-fold junctions); angular partition of unity at the origin (Fourier analysis shows it cannot be C^2); Moser and Weinstein corrections for edge smoothing (unnecessary -- the product Lagrangian is exactly Lagrangian).
+
+**What remains:** A fresh adversarial verification wave on all 7 pending nodes, particularly Node 1.5 (global assembly -- the most complex and critical node, rewritten and never verified in current form) and Node 1.7 (topological extension -- never challenged at all). The overlap matching argument (does the angular interpolation stay in {y_1 = 0}?) is the single most important unverified claim.
+
+---
+
+## Note from the Author
+
+*Tobias J. Osborne, February 2026*
+
+I am stopping this experiment here. I am not a domain expert in any of the ten problem areas covered by *First Proof*. Over the course of this investigation I have noticed that this matters enormously: without domain knowledge, I cannot guide the AI agents toward promising proof directions, assess whether a proposed argument is on the right track, or distinguish a genuine insight from a plausible-sounding dead end.
+
+In this sense, this repository is an excellent test of *full automation* -- what happens when you point an adversarial prover/verifier system at hard problems with no human mathematical guidance. The answer, honestly, is mixed. The `af` tool does find real errors (10 refutations in Problem 1 alone, including fabricated citations and false tightness claims). It does discover genuine dead ends and counterexamples. It does produce structured partial progress that would be useful to a domain expert picking up the problem.
+
+But it also produces arguments that I cannot evaluate. For Problem 4, I cannot tell whether the Herglotz coupling lemma is a deep insight or a reformulation that is "as hard as the original conjecture in different language" (the HANDOFF document itself warns of this). For Problem 5, the foundational definition turned out to be vacuous -- something a domain expert in equivariant homotopy theory would likely have caught before three sessions of wasted effort.
+
+By contrast, in my own research area (quantum information theory), the domain knowledge I bring is powerfully accelerated by the `af` tool. I can recognize when a proof direction is promising, redirect the agents away from dead ends early, and provide the feedback pressure that keeps the exploration productive. Outside my area of expertise, I cannot provide that guidance, and I may be creating total junk without knowing it.
+
+The lesson is clear: the `af` tool is a *force multiplier* for domain experts, not a replacement for domain expertise. Full automation on research-level mathematics remains out of reach -- not because the tool cannot find errors or generate arguments, but because *recognizing which arguments are worth pursuing* still requires a mathematician who understands the landscape.
+
+## Problems Not Yet Attempted
+
+Problems 6 (spectral graph theory), 7 (lattices in Lie groups), 9 (tensor analysis), and 10 (numerical linear algebra) have not yet been investigated with the `af` tool.
+
 ## Repository Structure
 
 ```
 docs/              Source paper (First_Proof.tex)
-problem01/         Problem statement + af proof tree
-problem02/         ...
-  ...
-problem10/         ...
+problem01/         84-node proof tree, LaTeX report, 4 sessions
+problem02/         17-node proof tree, LaTeX report, 3 sessions
+problem03/         9-node proof tree, LaTeX report, 3 sessions
+problem04/         24-node proof tree, LaTeX report, extensive computation
+problem05/         11-node proof tree, 2 sessions
+problem08/         9-node proof tree, LaTeX report, 7 sessions
 ```
 
 Each `problemNN/` folder contains:
-- `problem.md` — LLM-readable problem statement
-- `ledger/` — `af` proof tree (JSON node files)
+- `problem.md` -- LLM-readable problem statement
+- `ledger/` -- `af` proof tree (timestamped JSON entries recording all claims, challenges, amendments)
+- `HANDOFF.md` -- session handoff document with priorities and pitfalls
+- `report.tex` / `report.pdf` -- LaTeX summary (where generated)
+- `externals/` -- references to published theorems used in the proof
+- `defs/` -- formal definitions registered with `af`
 
 ## Trust Model
 
@@ -60,7 +254,7 @@ The only path to trust is:
 2. Compile with zero `sorry` statements and no custom axioms.
 3. Run `lake build` successfully.
 
-Everything else — natural-language arguments, proof sketches, `af` node judgments — is **unverified conjecture** regardless of how convincing it may appear.
+Everything else -- natural-language arguments, proof sketches, `af` node judgments -- is **unverified conjecture** regardless of how convincing it may appear.
 
 ## License
 
