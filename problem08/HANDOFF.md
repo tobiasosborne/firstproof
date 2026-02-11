@@ -15,68 +15,71 @@ A Lagrangian smoothing is a Hamiltonian isotopy K_t of smooth Lagrangian submani
 
 **YES** (conjectured, 70-75% confidence). K necessarily has a Lagrangian smoothing.
 
-## Current State (End of Session 3)
+## Current State (End of Session 4 — Verification Wave Partial)
 
 - **Proof tree:** 9 nodes total (root + 8 children)
-- **0 VALIDATED**, 0 refuted, 9 pending
-- **53 challenges from Session 2 — ALL 53 RESOLVED in Session 3 prover wave**
-- **0 open challenges**
-- **6 nodes rewritten** (1.2, 1.3, 1.4, 1.5, 1.6, 1.8)
-- **2 nodes not yet addressed** (1.1 summary, 1.7 topological extension)
-- **9 verifier jobs available** — full breadth-first verification wave needed
+- **2 VALIDATED** (Nodes 1.2 and 1.4 accepted), 0 refuted, 7 pending
+- **37 open challenges** from Session 4 verification wave
+- **53 resolved challenges** from Session 2 (all resolved in Session 3)
+- **7 of 9 nodes verified** (1.1 and 1.7 NOT YET VERIFIED)
 - **Run `af status`** from this directory to see the full tree.
-- **Run `af challenges`** to confirm all 53 resolved.
+- **Run `af challenges`** to see all open challenges.
 
-### Session 3 Summary
+### Session 4 Summary
 
-Session 3 was a PROVER WAVE addressing all 53 challenges from the devastating Session 2 verification. All 6 challenged nodes were rewritten with fundamentally new constructions. The key breakthrough was replacing the failed tropical resolution approach (Node 1.3) with cotangent generating functions.
+Session 4 was a **VERIFICATION WAVE** (partial — 7 of 9 nodes verified). The rewritten nodes from Session 3 were scrutinized. Two nodes were accepted; four were challenged with significant issues. **One fundamental flaw was discovered in Node 1.3 (smoothness at the origin)** that propagates to Nodes 1.5 and 1.6.
 
-**Nodes rewritten:**
+**Verification results:**
 
-| Node | Challenges Resolved | Key Change |
-|------|-------------------|------------|
-| 1.3 | 14 (4 critical) | COMPLETE REWRITE: Tropical resolution → cotangent generating functions |
-| 1.2 | 8 (1 critical) | Rigorous lemma; Type B proved impossible; moduli = 0-dimensional |
-| 1.8 | 7 (2 critical) | Floer error corrected; Maslov computed explicitly; monodromy resolved |
-| 1.4 | 8 (1 critical) | Moser trick removed; correct trivial product construction |
-| 1.5 | 12 (3 critical) | Three-phase assembly with transition zones; explicit matching |
-| 1.6 | 4 (0 critical) | Exhaustion argument; flux conflation fixed; dependencies added |
+| Node | Result | Challenges | Key Finding |
+|------|--------|------------|-------------|
+| 1.2 | **ACCEPTED** | 1 minor, 2 notes | 0-dim moduli verified correct; Sp(4,R) normalization sound |
+| 1.3 | **CHALLENGED** | 3 critical, 4 major, 2 minor, 1 note | **FATAL: F_smooth not C^∞ at origin** |
+| 1.4 | **ACCEPTED** | 3 minor | Product construction correct; Lagrangian condition automatic |
+| 1.5 | **CHALLENGED** | 3 critical, 6 major, 1 minor | Phase A/B boundary matching fundamentally flawed |
+| 1.6 | **CHALLENGED** | 1 critical, 3 major, 2 minor | Node 1.3 propagation + concatenation issues |
+| 1.8 | **CHALLENGED** | 2 major, 2 minor | Maslov computation method wrong (conclusion right), energy bound depends on 1.3 |
+| 1.1 | NOT VERIFIED | — | Stale summary, still references old strategy |
+| 1.7 | NOT VERIFIED | — | Stale, references "surgery necks" from abandoned approach |
+| 1 | NOT VERIFIED | — | Root; cannot accept until all children validated |
 
 ---
 
-## SESSION 3: KEY CHANGES TO THE PROOF
+## SESSION 4: KEY FINDINGS
 
-### CHANGE 1: Vertex Smoothing via Cotangent Generating Functions (Node 1.3)
+### FINDING 1: Node 1.3 — Smoothness at Origin FAILS (CRITICAL)
 
-The tropical resolution approach was completely abandoned. The new construction:
+The **most important discovery** of Session 4. The angular partition of unity construction in Node 1.3 Step 4 produces a function F_smooth(X) = r² · g(θ) where g(θ) = Σᵢ ρᵢ(θ) · qᵢ(θ). The claim that this is C^∞ at the origin by "homogeneity degree 2" is **FALSE**.
 
-1. Choose a reference Lagrangian plane Lambda transverse to all 4 face planes
-2. In T*Lambda ≅ R^4, each face becomes graph(dQ_i) where Q_i = (1/2)X^T A_i X
-3. The piecewise-quadratic generating function F_PL is smoothed via angular partition of unity
-4. Compact support via radial cutoff: F_final = F_PL + phi(|X|/delta) * (F_smooth - F_PL)
-5. graph(dF_final) is automatically Lagrangian and embedded
-6. Explicit Hamiltonian isotopy: G_t = F_PL + t * phi * (F_smooth - F_PL)
+**Why it fails:** By a classical result from harmonic analysis, r² · g(θ) is smooth at the origin only if g has Fourier expansion containing solely modes |n| ≤ 2 with n even. An angular partition of unity ρᵢ(θ) generically introduces all Fourier modes (n=4, 6, 8, ...). The resulting function has a direction-dependent Hessian at the origin — meaning it is NOT C² there.
 
-**Why this works:** In T*R^2, graph(dF) is Lagrangian for ANY smooth F. This converts the hard symplectic problem into a trivial PDE problem (construct a smooth function).
+**Three critical challenges:**
+- ch-718a9a57ae5: F_smooth not C^∞ at origin (Fourier mode argument)
+- ch-34ff33544ce: Hessian claim self-contradictory (D²F_smooth(0) depends on θ)
+- ch-7313ffe7860: D(X) = F_smooth - F_PL also not smooth at origin
 
-### CHANGE 2: All Type A Vertices Are Sp(4,R)-Equivalent (Node 1.2)
+**Potential fix (noted by verifier):** Two-zone construction — use an explicit smooth quadratic F₀ in an inner disk near the origin, and transition to the angular interpolation in an annular region where θ is well-defined and smoothness is not an issue. This would require significant rewriting of Node 1.3.
 
-Session 2 found the moduli was 1-dimensional (gamma parameter). Session 3 proved it is **0-dimensional**: the symplectomorphism g(e_3) = e_3 - gamma*e_1 eliminates gamma. The unique normal form:
-```
-Pi_1 = span{e1, e2}, Pi_2 = span{e1, e4}, Pi_3 = span{e3, e4}, Pi_4 = span{e2, e3}
-```
+### FINDING 2: Node 1.5 — Phase A/B Boundary Matching Flaw (CRITICAL, independent of 1.3)
 
-### CHANGE 3: Edge Smoothing Is Trivial (Node 1.4)
+Node 1.5 has a **standalone structural flaw** in its Phase A/B matching argument. At the boundary |X| = δ+η along each edge:
+- Phase A has φ = 0 (no smoothing)
+- Phase B has χ_long = 0 (no smoothing)
+- **NEITHER phase smooths the crease** at this boundary
 
-The Moser trick was removed entirely. The correct argument: in adapted coordinates with the edge along x_1 and both faces in {y_1=0}, any smooth curve in the (x_2,y_2)-plane gives a Lagrangian. The pullback of omega is identically zero — no correction needed.
+The node's claim that "Phase B acts on an already-smooth surface" at the junction is **false**. This is independent of Node 1.3's issues and requires its own fix.
 
-### CHANGE 4: Floer Exactness Error Corrected (Node 1.8)
+### FINDING 3: Nodes 1.2 and 1.4 Are Solid
 
-The claim "R^4 exact ⟹ Lagrangian exact ⟹ m_0=0" was corrected: compact tori are NOT exact (Gromov 1985). Floer theory is declared irrelevant to the smoothing problem (construction is local). Maslov index computed explicitly (= 0 at each vertex).
+**Node 1.2** (vertex classification): The 0-dimensional moduli claim is fully verified. The Sp(4,R) normalization, Type B impossibility, and gamma elimination are all correct.
 
-### CHANGE 5: Monodromy Resolved (Node 1.8)
+**Node 1.4** (edge smoothing): The product construction is correct and elegant. Any smooth curve in the (x_2,y_2)-plane crossed with the x_1-line gives an exactly Lagrangian surface. No corrections needed.
 
-The cotangent generating function approach uses a single global reference plane Lambda for all vertices, eliminating discrete choices entirely. The set of valid Lambda is open, dense, and connected in LG(2,4).
+### FINDING 4: Nodes 1.6 and 1.8 Have Propagation Issues
+
+Both nodes depend on Node 1.3's smoothness, so they inherit critical issues. Additionally:
+- **Node 1.6**: Concatenation Hamiltonian at t=1/2 is discontinuous (needs time reparametrization); Weinstein correction in Step 1b contradicts Node 1.4
+- **Node 1.8**: Maslov index computed via signature formula applied to non-transverse pairs (wrong method, right answer — should use contractibility of cotangent chart)
 
 ---
 
@@ -84,78 +87,78 @@ The cotangent generating function approach uses a single global reference plane 
 
 ```
 1  [pending] Root conjecture
-├── 1.1 [pending] Answer: YES (strategy overview)          — NOT YET REWRITTEN (still references old strategy)
-├── 1.2 [pending] Local vertex model LEMMA                 — REWRITTEN Session 3, 0 open challenges
-├── 1.3 [pending] Local vertex smoothing (generating fn)    — REWRITTEN Session 3, 0 open challenges
-├── 1.4 [pending] Edge smoothing (product construction)     — REWRITTEN Session 3, 0 open challenges
-├── 1.5 [pending] Global assembly (3-phase)                 — REWRITTEN Session 3, 0 open challenges
-├── 1.6 [pending] Hamiltonian isotopy LEMMA                 — REWRITTEN Session 3, 0 open challenges
-├── 1.7 [pending] Topological extension to t=0              — NOT YET VERIFIED or rewritten
-└── 1.8 [pending] Global obstruction analysis LEMMA         — REWRITTEN Session 3, 0 open challenges
+├── 1.1 [pending] Answer: YES (strategy overview)          — NOT YET VERIFIED (stale, references old strategy)
+├── 1.2 [ACCEPTED] Local vertex model LEMMA                — Session 4: VALIDATED (1 minor, 2 notes)
+├── 1.3 [pending] Local vertex smoothing (generating fn)    — Session 4: 10 challenges (3 CRITICAL)
+├── 1.4 [ACCEPTED] Edge smoothing (product construction)    — Session 4: VALIDATED (3 minor)
+├── 1.5 [pending] Global assembly (3-phase)                 — Session 4: 9 challenges (3 CRITICAL)
+├── 1.6 [pending] Hamiltonian isotopy LEMMA                 — Session 4: 6 challenges (1 critical, 3 major)
+├── 1.7 [pending] Topological extension to t=0              — NOT YET VERIFIED (stale)
+└── 1.8 [pending] Global obstruction analysis LEMMA         — Session 4: 4 challenges (2 major, 2 minor)
 ```
 
 ---
 
 ## What the Next Agent Should Do
 
-### IMMEDIATE: Verification Wave (Session 4)
+### IMMEDIATE: Prover Wave (Session 5)
 
-All 9 nodes are available for verification. Run `af jobs` to see the verifier queue.
+37 open challenges across 4 nodes. Priority order for provers (most endangered first):
 
-**Priority order for verification (breadth-first):**
+1. **Node 1.3** (10 challenges, 3 critical) — **HIGHEST PRIORITY.** The smoothness-at-origin failure is proof-breaking. The prover MUST:
+   - Abandon the angular partition of unity at the origin
+   - Implement a two-zone construction: explicit smooth quadratic F₀ near origin (inner disk |X| ≤ ε), angular interpolation in annulus ε ≤ |X| ≤ δ, radial cutoff to PL for |X| ≥ δ
+   - Verify the transition between zones is C^∞
+   - Resolve ALL 10 challenges
 
-1. **Node 1.2** (foundation) — Verify the Type B impossibility proof and the Sp(4,R)-equivalence claim (all gamma equivalent). The 0-dimensional moduli is a NEW claim from Session 3 — scrutinize it.
-2. **Node 1.3** (core construction) — Verify the cotangent generating function approach. Key questions:
-   - Is the transversality claim correct (Lambda transverse to all 4 planes exists)?
-   - Does the angular partition of unity preserve the generating function property?
-   - Is the radial cutoff smooth at the origin?
-   - Does the boundary matching work (F_final = F_PL on ∂B_delta)?
-3. **Node 1.4** (edge smoothing) — Verify the product construction. Relatively straightforward.
-4. **Node 1.5** (global assembly) — Verify the three-phase construction and transition zone matching. This is where the subtlety lives.
-5. **Node 1.6** (Hamiltonian isotopy) — Verify the exhaustion argument for non-compact K.
-6. **Node 1.8** (obstructions) — Verify the Maslov computation and monodromy resolution.
-7. **Node 1.1** (summary) — Needs rewrite to reflect new strategy (still references Polterovich + tropical).
-8. **Node 1.7** (topological extension) — Not yet addressed. Verify or challenge.
-9. **Node 1** (root) — Cannot accept until all children validated.
+2. **Node 1.5** (9 challenges, 3 critical) — **HIGH PRIORITY.** The Phase A/B boundary matching needs fundamental redesign:
+   - The prover must either: (a) make Phase A and Phase B supports overlap with proven compatibility, or (b) use a single unified construction, or (c) prove Phase B's Hamiltonian flow can smooth a PL crease from non-smooth initial data
+   - This is independent of Node 1.3 — even if 1.3 is fixed, 1.5's matching argument is broken
+   - Resolve ALL 9 challenges
 
-### RISKS AND CONCERNS FOR VERIFIERS
+3. **Node 1.6** (6 challenges, 1 critical) — After 1.3 is fixed, most issues resolve automatically. Still needs:
+   - Smooth time reparametrization for concatenation
+   - Remove vestigial Weinstein correction reference
+   - Fix exactness argument (local → global patching)
 
-1. **Node 1.2 — Sp(4,R)-equivalence:** The claim that ALL Type A vertices are equivalent (gamma can be eliminated) is strong. The symplectomorphism g(e_3) = e_3 - gamma*e_1 needs careful verification that it preserves ALL the structure (not just 3 of 4 planes).
+4. **Node 1.8** (4 challenges, 0 critical) — Lower priority:
+   - Replace signature formula with contractibility argument for Maslov index
+   - Note energy bound dependency on Node 1.3
 
-2. **Node 1.3 — Smoothness at origin:** The generating function F_smooth is defined using angular partition of unity rho_i(theta). At the origin, theta is undefined. The claim that F_smooth is C^infinity at the origin (because it's homogeneous degree 2) needs verification.
+5. **Node 1.1** — Needs complete rewrite to reflect current proof strategy (still references Polterovich surgery and tropical resolution).
 
-3. **Node 1.3 — Transversality:** The claim that a single Lambda works for all gamma relies on the Maslov cycles being codimension-1 in LG(2,4). This is standard but should be verified.
+6. **Node 1.7** — Needs rewrite. Current statement references "surgery necks" and "lambda(t)→0" from the abandoned approach. Should describe generating-function convergence instead.
 
-4. **Node 1.5 — Transition zones:** The matching between vertex-smoothed and edge-smoothed regions is the most delicate part. The argument that "both are graph Lagrangians in cotangent coordinates" needs verification.
+### AFTER PROVER WAVE: Complete Verification
 
-5. **Node 1.1 — Stale:** Still references Polterovich surgery and tropical resolution. Needs rewrite to match the new proof strategy.
-
-6. **Node 1.7 — Unexamined:** The topological extension (K_t → K as t → 0) has not been verified or updated. With the new generating function approach, the convergence argument should be: as delta → 0, the cutoff region shrinks and K_t → K in Hausdorff topology.
+After provers address the 37 challenges:
+1. Re-verify Nodes 1.3 and 1.5 (the critical ones)
+2. Verify Nodes 1.1 and 1.7 (not yet examined)
+3. Verify Node 1 (root) — only after all children validated
 
 ---
 
-## Session 3 Proof Strategy (NEW)
+## Session 4 Challenge Summary by Severity
 
-### Step 1: Vertex Classification (Node 1.2)
-At each vertex, the tangent cone is 4 Lagrangian sectors. Only Type A exists (4 distinct planes, non-consecutive transverse). All Type A vertices are Sp(4,R)-equivalent.
+| Severity | Count | Nodes Affected |
+|----------|-------|----------------|
+| Critical | 7 | 1.3 (3), 1.5 (3), 1.6 (1) |
+| Major | 11 | 1.3 (4), 1.5 (6), 1.6 (3), 1.8 (2) |
+| Minor | 13 | 1.2 (1), 1.3 (2), 1.4 (3), 1.5 (1), 1.6 (2), 1.8 (2) |
+| Note | 6 | 1.2 (2), 1.3 (1), 1.5 (0), 1.6 (0), 1.8 (0) |
+| **Total** | **37** | |
 
-### Step 2: Vertex Smoothing (Node 1.3) — NEW METHOD
-Cotangent generating functions: choose Lambda transverse to all 4 planes, express faces as graphs of exact 1-forms, smooth the piecewise-quadratic generating function, apply radial cutoff for compact support.
+---
 
-### Step 3: Edge Smoothing (Node 1.4) — CORRECTED
-Trivial product construction: any smooth curve in the transverse (x_2,y_2)-plane gives a Lagrangian. No Moser correction needed.
+## Proof Strategy (unchanged from Session 3)
 
-### Step 4: Global Assembly (Node 1.5) — CORRECTED
-Three-phase: (A) vertex smoothing in disjoint balls, (B) edge smoothing in disjoint tubes, (C) transition zone matching via generating function interpolation.
-
-### Step 5: Hamiltonian Isotopy (Node 1.6) — CORRECTED
-By construction (each local smoothing is Hamiltonian). Exhaustion for non-compact K.
-
-### Step 6: Topological Extension (Node 1.7)
-As delta → 0, surgery regions shrink, K_t → K in Hausdorff topology.
-
-### Step 7: Obstruction Check (Node 1.8) — CORRECTED
-Maslov index = 0 at each vertex. No Floer obstruction (construction is local). Monodromy resolved (single global Lambda).
+### Step 1: Vertex Classification (Node 1.2) — VALIDATED
+### Step 2: Vertex Smoothing (Node 1.3) — NEEDS FIX (smoothness at origin)
+### Step 3: Edge Smoothing (Node 1.4) — VALIDATED
+### Step 4: Global Assembly (Node 1.5) — NEEDS FIX (Phase A/B matching)
+### Step 5: Hamiltonian Isotopy (Node 1.6) — NEEDS MINOR FIXES
+### Step 6: Topological Extension (Node 1.7) — NEEDS REWRITE
+### Step 7: Obstruction Check (Node 1.8) — NEEDS MINOR FIXES
 
 ---
 
@@ -164,7 +167,7 @@ Maslov index = 0 at each vertex. No Floer obstruction (construction is local). M
 ```bash
 af status                                    # see tree
 af get <id>                                  # node details
-af challenges                                # see all 53 challenges (all resolved)
+af challenges                                # see all challenges (37 open, 53 resolved)
 af challenge <id> -r "reason" -s severity    # raise challenge
 af resolve-challenge <id>                    # resolve a challenge
 af claim <id> --owner <name> --role prover   # claim a node
