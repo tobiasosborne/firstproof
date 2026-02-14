@@ -13,15 +13,12 @@
 \usepackage{longtable}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{tikz}
-\usetikzlibrary{trees,arrows.meta,positioning}
 
 % --- Theorem environments ---
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{conjecture}[theorem]{Conjecture}
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
@@ -35,392 +32,437 @@
 \newcommand{\Wick}[1]{:\!#1\!:}
 \DeclareMathOperator{\dmu}{d\mu}
 
-% --- Colors for status ---
+% --- Colors ---
 \definecolor{proved}{RGB}{0,128,0}
 \definecolor{pending}{RGB}{200,150,0}
 \definecolor{refuted}{RGB}{200,0,0}
 \definecolor{archived}{RGB}{128,128,128}
 
 % --- Title ---
-\title{\textbf{Report on Problem~1: Equivalence of the $\Phi^4_3$ Measure Under Smooth Shifts}\\[6pt]
-\large Adversarial Proof Framework Analysis}
-\author{Generated from the \texttt{af} proof workspace\\
-First Proof Project}
+\title{\textbf{Critical Comparison Report on Problem~1:\\
+Equivalence of the $\Phi^4_3$ Measure Under Smooth Shifts}\\[6pt]
+\large Automated \texttt{af} Proof Attempt vs.\ Official Solution}
+\author{First Proof Project --- Post-Mortem Analysis}
 \date{February 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This report documents the adversarial proof investigation of Problem~1 from the First Proof paper (posed by Martin Hairer): whether the $\Phi^4_3$ measure $\mu$ on $\mathcal{D}'(\T^3)$ is equivalent to its pushforward $T_\psi^*\mu$ under a smooth nonzero shift $\psi$.
-The answer is \textbf{YES}.
-Over four adversarial sessions, we have constructed an 84-node proof tree with 21 nodes validated, 8 refuted (all repaired), and 6 archived.
-The proof follows a four-stage strategy: (A)~regularized Radon--Nikodym derivative, (B)~Wick expansion, (C)~renormalization, and (D)~passage to the limit.
-Stages A--C are fully validated.
-Stage~D contains the remaining open step: identifying $T_\psi^*\mu = \rho\cdot\mu$ where $\rho = \exp(\Psi^{\mathrm{ren}})/Z$, for which a Bou\'e--Dupuis variational approach has been proposed but not yet verified.
+This report critically compares the automated adversarial proof framework (\texttt{af}) attempt at Problem~1 of the First Proof benchmark with the official correct solution due to Martin Hairer.
+The problem asks whether the $\Phi^4_3$ measure $\mu$ on $\mathcal{D}'(\T^3)$ is equivalent to its pushforward $T_\psi^*\mu$ under a smooth nonzero shift $\psi$.
+The \texttt{af} tool claimed the answer was \textbf{YES} (mutual absolute continuity), while the correct answer is \textbf{NO} (mutual singularity).
+This is a fundamental error at the level of the conjecture's truth value.
+We analyze what went right, what went wrong, and why; identify which nodes in the 84-node proof tree are fundamentally flawed; discuss which technical contributions remain valid despite the wrong answer; and draw lessons for future automated proof attempts.
 \end{abstract}
 
 \tableofcontents
 \newpage
 
 %======================================================================
-\section{Problem Statement}
+\section{The Problem}
 \label{sec:problem}
 %======================================================================
 
-\subsection{Setup}
-
-The problem, posed by Martin Hairer (EPFL and Imperial), lies at the intersection of stochastic analysis and constructive quantum field theory.
-
-\begin{definition}[$\Phi^4_3$ measure]
-Let $\T^3$ be the three-dimensional unit torus.  The $\Phi^4_3$ measure $\mu$ on $\mathcal{D}'(\T^3)$ is the probability measure formally given by
+Let $\T^3$ be the three-dimensional unit torus, and let $\mu$ be the $\Phi^4_3$ measure on $\mathcal{D}'(\T^3)$, the probability measure formally given by
 \[
-  d\mu(\phi) \;\propto\; \exp\Bigl(-\lambda\int_{\T^3} \phi^4\,dx - \delta m^2 \int_{\T^3}\phi^2\,dx\Bigr)\,d\mu_0(\phi),
+  d\mu(\phi) \;\propto\; \exp\Bigl(-\int_{\T^3}\Bigl(\tfrac{1}{2}|\nabla\phi|^2 + \tfrac{\lambda}{4}\phi^4 - \tfrac{C}{2}\phi^2\Bigr)\,dx\Bigr)\,\mathcal{D}\phi,
 \]
-where $\mu_0$ is the massive Gaussian free field with covariance $C = (-\Delta + m^2)^{-1}$, $\lambda > 0$, and $\delta m^2$ is a mass counterterm (divergent, requiring renormalization).
-The rigorous construction is due to Hairer~\cite{Hairer14} via regularity structures, with independent constructions by Gubinelli--Hofmanov\'a~\cite{GH19} and Barashkov--Gubinelli~\cite{BG20}.
-\end{definition}
+where $C$ is a (diverging) renormalization constant and the expression is made rigorous via regularity structures \cite{Hairer14}, paracontrolled distributions \cite{CC18,GIP15}, or variational methods \cite{BG20}.
 
-\begin{definition}[Shift map and pushforward]
-For a smooth function $\psi : \T^3 \to \R$ with $\psi \not\equiv 0$, define $T_\psi : \mathcal{D}'(\T^3) \to \mathcal{D}'(\T^3)$ by $T_\psi(u) = u + \psi$.
-The pushforward measure is $(T_\psi^*\mu)(A) = \mu(T_\psi^{-1}(A))$.
-\end{definition}
+For a smooth function $\psi : \T^3 \to \R$ with $\psi \not\equiv 0$, define the shift map $T_\psi(\phi) = \phi + \psi$ and the pushforward $(T_\psi^*\mu)(A) = \mu(T_\psi^{-1}(A))$.
 
-\subsection{The Question}
+\medskip
+\noindent\textbf{Question (Hairer):} Are $\mu$ and $T_\psi^*\mu$ equivalent (i.e., mutually absolutely continuous)?
 
-\begin{conjecture}[Hairer]
-\label{conj:main}
-The measures $\mu$ and $T_\psi^*\mu$ are equivalent (mutually absolutely continuous).
-\end{conjecture}
-
-\noindent\textbf{Answer: YES.}  The measures are equivalent.  This is a natural analogue of the Cameron--Martin theorem for the interacting $\Phi^4_3$ measure: shifts by smooth functions preserve the null sets.
-
-\subsection{Why This Is Hard}
-
-Several features make this problem non-trivial:
-\begin{enumerate}
-\item $\mu \perp \mu_0$: the $\Phi^4_3$ measure is singular with respect to the Gaussian free field~\cite{BG21girsanov}, so the classical Cameron--Martin theorem does not apply directly.
-\item The interaction potential $V(\phi) = \lambda\int\Wick{\phi^4}\,dx$ requires UV renormalization; the shift $\phi \mapsto \phi + \psi$ generates terms with divergent coefficients.
-\item The Radon--Nikodym derivative of the regularized measures $R_\eps = d(T_\psi^*\mu_\eps)/d\mu_\eps$ diverges pointwise as $\eps \to 0$, because it contains a linear term $L_\eps = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$ with $\delta m_\eps^2 \sim C\log(1/\eps) \to \infty$.
-\end{enumerate}
+\medskip
+\noindent This problem was posed as part of the First Proof benchmark \cite{FirstProof}, a collection of research-level mathematics problems designed to test the capabilities of AI-generated proofs.
 
 %======================================================================
-\section{Proof Strategy}
-\label{sec:strategy}
+\section{The Official Correct Solution}
+\label{sec:official}
 %======================================================================
 
-The proof proceeds in four stages.
+\subsection{The Answer: NO --- Mutual Singularity}
 
-\subsection{Stage A: Regularized Radon--Nikodym Derivative (Nodes 1.2, 1.3)}
+The correct answer, due to Hairer (simplified from joint work with Jacopo Peroni, based on \cite{HKN24}), is:
 
-For each $\eps > 0$, the UV-regularized measure $\mu_\eps = Z_\eps^{-1}\exp(-V_\eps(\phi))\,d\mu_0(\phi)$ satisfies $\mu_\eps \sim \mu_0$.  Since $\psi \in C^\infty(\T^3) \subset H^1(\T^3)$ (the Cameron--Martin space of $\mu_0$), we have $T_\psi^*\mu_0 \sim \mu_0$ by the Cameron--Martin theorem, and hence $T_\psi^*\mu_\eps \sim \mu_\eps$.  The Radon--Nikodym derivative is
-\[
-  R_\eps(\phi) = \frac{d(T_\psi^*\mu_\eps)}{d\mu_\eps}(\phi) = \exp\bigl(\Psi_\eps(\phi)\bigr),
-\]
-where $\Psi_\eps(\phi) = V_\eps(\phi) - V_\eps(\phi+\psi) + \ip{(-\Delta+m^2)\psi}{\phi_\eps} - \tfrac{1}{2}\norm{\psi}_{H^1}^2$.
+\begin{theorem}[Hairer]
+For any smooth $\psi \not\equiv 0$ and any nonzero coupling constant, the measures $\mu$ and $T_\psi^*\mu$ are \textbf{mutually singular}.
+\end{theorem}
 
-\textbf{Status:} \textcolor{proved}{Both nodes 1.2 and 1.3 VALIDATED.}
+\subsection{Context and Significance}
 
-\subsection{Stage B: Wick Expansion (Nodes 1.4.1--1.4.4)}
-
-Expanding $V_\eps(\phi+\psi) - V_\eps(\phi)$ using Wick calculus:
-\begin{align}
-  \Delta V_\eps &= 4\lambda\int\psi_\eps\Wick{\phi_\eps^3}_{C_\eps}\,dx
-  + 6\lambda\int\psi_\eps^2\Wick{\phi_\eps^2}_{C_\eps}\,dx
-  + 4\lambda\ip{\psi_\eps^3}{\phi_\eps} \notag\\
-  &\quad + \lambda\int\psi_\eps^4\,dx
-  + 6\lambda C_\eps(0)\int\psi_\eps^2\,dx
-  + 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}
-  + \delta m_\eps^2\int\psi_\eps^2\,dx. \label{eq:wick-expansion}
-\end{align}
-The first three terms involve Wick powers $\Wick{\phi_\eps^k}$ ($k=1,2,3$) smeared against smooth functions of $\psi$; these converge as $\eps \to 0$.  The remaining terms are either deterministic constants, the divergent linear term $2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$, or sub-leading.
-
-\textbf{Status:} \textcolor{proved}{All four nodes VALIDATED.}
-
-\subsection{Stage C: Renormalization (Nodes 1.5.1--1.5.4)}
-
-The exponent decomposes as
-\[
-  \Psi_\eps(\phi) = \Psi_\eps^{\mathrm{ren}}(\phi) + L_\eps(\phi) + K_\eps,
-\]
-where:
+The result fits into a broader picture distinguishing dimensions 2 and 3 in constructive QFT:
 \begin{itemize}
-\item $\Psi_\eps^{\mathrm{ren}}$ is the \emph{renormalized exponent}, a sum of smeared Wick powers against smooth functions of $\psi$ that converges in $L^p(\mu)$ for all $p \geq 1$ as $\eps \to 0$ (node 1.5.3);
-\item $L_\eps = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$ is the \emph{divergent linear tilt} ($\delta m_\eps^2 \sim C\log(1/\eps)$);
-\item $K_\eps$ is a deterministic constant absorbed into the normalization.
+\item In dimension 2, the $\Phi^4_2$ measure $\mu$ is equivalent to the free field $\nu$ (Nelson, Glimm--Jaffe), and $\mu$ \emph{is} quasi-invariant under smooth shifts.
+\item In dimension 3, Glimm \cite{Gli68} showed that $\mu \perp \nu$. The question probes whether $\mu$ retains the weaker quasi-invariance property. It does not.
+\item The borderline dimension for $\mu \sim \nu$ is $8/3$; the borderline dimension for quasi-invariance under smooth shifts turns out to be $3$ itself, and the $\Phi^4_3$ measure falls on the singular side.
 \end{itemize}
 
-The limiting renormalized exponent is
+\subsection{Key Ideas of the Proof}
+\label{sec:official-proof}
+
+The proof constructs a ``distinguishing event'' $B^\gamma$ that has full $\mu$-measure but zero $T_\psi^*\mu$-measure, thereby witnessing mutual singularity. The argument proceeds as follows.
+
+\paragraph{Step 1: Decomposition of the field.}
+Using the da Prato--Debussche/paracontrolled ansatz, the $\Phi^4_3$ field $u$ is decomposed as
 \[
-  \Psi^{\mathrm{ren}}(\phi) = -4\lambda\ip{\psi}{\Wick{\phi^3}} + 6\lambda\ip{\psi^2}{\Wick{\phi^2}} + 4\lambda\ip{\psi^3}{\phi} + \ip{(-\Delta+m^2)\psi}{\phi}.
+  u = \,\text{\textdagger}\, - \dot\Upsilon + v,
 \]
+where $\text{\textdagger}$ is the stationary Ornstein--Uhlenbeck (free field) process, $\dot\Upsilon$ is the stationary solution to $(\partial_t + 1 - \Delta)\dot\Upsilon = \,\text{\textdagger}^{\diamond 2}\!\!$\,, and $v$ is a remainder with improved regularity: $v \in C^{1-2\kappa}$ with a further paraproduct decomposition $v = -3((v - \dot\Upsilon) \prec \text{\textdagger}^{\diamond 2}) + v^\sharp$ where $v^\sharp \in C^{1+4\kappa}$.
 
-\textbf{Status:} \textcolor{proved}{All four nodes VALIDATED.}
-
-\subsection{Stage C\texorpdfstring{$'$}{'}: Convergence (Nodes 1.6.1--1.6.4)}
-
-This stage establishes $L^1(\mu)$ integrability and the passage to the limit.
-
-\paragraph{Node 1.6.1 (Wick power regularity).}  Under $\mu$, the Wick powers $\Wick{\phi^k}$ lie in Besov spaces $C^{-k/2-\delta}(\T^3)$, and the duality pairings $\ip{f}{\Wick{\phi^k}}$ are well-defined for $f \in C^\infty$.
-\textcolor{proved}{VALIDATED.}
-
-\paragraph{Node 1.6.2 (Exponential integrability).}  For all $\alpha \in \R$, $f \in C^\infty(\T^3)$, and $k \in \{1,2,3\}$:
+\paragraph{Step 2: The distinguishing event.}
+Define the diverging constant $c_{N,2} := \mathbb{E}[\text{\textdagger}_N^{\diamond 2} \cdot \dot\Upsilon_N]$ (where $\text{\textdagger}_N = P_N \text{\textdagger}$ is the frequency truncation), which satisfies
 \[
-  E_\mu\bigl[\exp\bigl(\alpha\ip{f}{\Wick{\phi^k}}\bigr)\bigr] < \infty.
+  c_{N,2} \gtrsim \log N.
 \]
-This was the \textbf{hardest result} in the proof, requiring four repair attempts.
-The successful approach (4th repair) expresses the exponential moment as a ratio of partition functions $Z_\eps^{(\alpha)}/Z_\eps$ and applies the Barashkov--Gubinelli variational bound~\cite{BG20} to the tilted potential.
-\textcolor{proved}{Six key sub-nodes VALIDATED} (1.6.2.10.2.1, 1.6.2.10.2.2.1, 1.6.2.10.2.3.3, 1.6.2.10.2.4, 1.6.2.10.3, 1.6.2.10.4).
-
-\paragraph{Node 1.6.3 (Uniform integrability of $\exp(\Psi_\eps^{\mathrm{ren}})$).}  On a Skorokhod coupling space where $\mu_\eps \to \mu$ a.s., the family $\{\exp(\Psi_\eps^{\mathrm{ren}})\}$ is uniformly integrable.  This follows from the exponential integrability bounds (1.6.2) via the de la Vall\'ee-Poussin criterion.
-\textcolor{proved}{Key node 1.6.3.4 VALIDATED.}  Nodes 1.6.3.2 (Skorokhod coupling), 1.6.3.3 (finiteness of $Z$), and 1.6.3.8 (assembly) are \textcolor{pending}{pending verification} but believed correct.
-
-\paragraph{Node 1.6.4 (Passage to the limit).}  This is the \textbf{current frontier}.  The goal is to identify $T_\psi^*\mu = \rho\cdot\mu$ where $\rho = \exp(\Psi^{\mathrm{ren}})/Z$.  See Section~\ref{sec:frontier} for details.
-
-\subsection{Stage D: Conclusion (Nodes 1.7, 1.8)}
-
-\paragraph{Node 1.7 (Strict positivity).}  $R(\phi) = \exp(\Psi^{\mathrm{ren}}(\phi))/Z > 0$ for $\mu$-a.e.\ $\phi$, since the exponential is always positive and $Z > 0$.  \textcolor{pending}{Not yet formally proved} (trivial).
-
-\paragraph{Node 1.8 (Symmetry).}  Applying the same argument with $-\psi$ gives $\mu \ll T_\psi^*\mu$.  Combined with $T_\psi^*\mu \ll \mu$ from the main argument, this yields $\mu \sim T_\psi^*\mu$.  \textcolor{pending}{Not yet formally proved} (straightforward).
-
-%======================================================================
-\section{The Current Frontier: Passage to the Limit}
-\label{sec:frontier}
-%======================================================================
-
-\subsection{The Core Difficulty}
-
-The regularized identity $T_\psi^*\mu_\eps = R_\eps\cdot\mu_\eps$ holds for each $\eps > 0$, where
+The distinguishing event is
 \[
-  R_\eps = \exp\bigl(\Psi_\eps^{\mathrm{ren}} + L_\eps + K_\eps\bigr).
+  B^\gamma := \Bigl\{ u \in \mathcal{D}' : \lim_{N\to\infty} (\log N)^{-\gamma} \bigl\langle H_3(P_N u; c_N) + 9c_{N,2}\,P_N u,\; \psi \bigr\rangle = 0 \Bigr\},
 \]
-To pass to the limit, we must handle the divergent linear term $L_\eps = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$.  While $\Psi_\eps^{\mathrm{ren}} \to \Psi^{\mathrm{ren}}$ in $L^p(\mu)$ and $K_\eps$ is a deterministic constant, the tilt $L_\eps$ diverges:
-\[
-  L_\eps(\phi) = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}, \qquad \delta m_\eps^2 \sim C\log(1/\eps) \to \infty.
-\]
-This makes $R_\eps$ diverge pointwise, so direct $L^1$ convergence of $R_\eps$ is impossible.
+for $\gamma > 1/2$.
 
-\subsection{Refuted Approach: Tilted Measure Convergence (Session 4)}
-
-The original node 1.6.4.3 proposed: rewrite $R_\eps$ in ``Boltzmann ratio'' form, define the $L_\eps$-tilted measures $\mu_\eps^L := \exp(L_\eps)\,d\mu_\eps / E_{\mu_\eps}[\exp(L_\eps)]$, and show $\mu_\eps^L \to \mu$ weakly.
-
-\textbf{This was REFUTED} (Session~4, Refutation~10) with two critical flaws:
-
-\begin{enumerate}
-\item \textbf{Tightness failure.}  Under $\mu_\eps^L$, the expectation $E_{\mu_\eps^L}[\ip{\psi}{\phi}]$ diverges as $\eps \to 0$.  The mechanism: the exponential tilt $\exp(\beta\ip{\psi}{\phi})$ with $\beta = 2\delta m_\eps^2 \to \infty$ shifts the effective mean by $\sim \beta^{1/3}$ (from competition between quartic confinement $\lambda\phi^4$ and linear tilt $\beta\phi$), which breaks tightness of $\{\mu_\eps^L\}$ in $C^{-1/2-\delta}(\T^3)$.
-
-\item \textbf{Wrong limit identification.}  $\Phi^4_3$ uniqueness (Hairer 2014, BG 2020) says the limit is independent of the UV regularization scheme---it does \emph{not} say different potentials produce the same measure.  The tilted potential $V_\eps^L$ differs from $V_\eps$ by a divergent perturbation.  Under $\chi = \phi - \psi$, $V_\eps^L$ expands to include $Z_2$-symmetry-breaking cubic terms $4\lambda\psi\Wick{\chi^3}$, producing a different limiting measure.
-\end{enumerate}
-
-\subsection{Current Repair: Bou\'e--Dupuis Variational Approach (Node 1.6.4.3.3)}
-
-The repaired approach uses the Barashkov--Gubinelli variational framework~\cite{BG20}:
-
-\begin{enumerate}
-\item \textbf{BG variational representation.}  The $\Phi^4_3$ measure $\mu$ is the law of $X_1^{u^*}$ where $u^*$ is the optimal drift in the Bou\'e--Dupuis stochastic control problem:
-\[
-  -\log Z = \inf_{u \in \mathcal{H}_a} E\Bigl[\tfrac{1}{2}\int_0^1\norm{u_s}_{L^2}^2\,ds + V(X_1^u)\Bigr],
-\]
-with $X_t^u = X_t + \int_0^t e^{-(t-s)A}u_s\,ds$ and $A = -\Delta + m^2$.
-
-\item \textbf{Shift as drift change.}  Since $\psi \in C^\infty \subset H^1 = D(A^{1/2})$, there exists deterministic $h \in L^2([0,1]; L^2(\T^3))$ such that $\psi = \int_0^1 e^{-(1-s)A}h_s\,ds$.  Then $X_1^{u^*} + \psi = X_1^{u^*+h}$, so $T_\psi^*\mu = \mathrm{Law}(X_1^{u^*+h})$.
-
-\item \textbf{Girsanov density.}  By Girsanov's theorem, $\mathrm{Law}(X_1^{u^*+h})$ under $P$ equals $\mathrm{Law}(X_1^{u^*})$ under $P^h$, where $dP^h/dP = M_h = \exp(\int_0^1\ip{h_s}{dW_s} - \tfrac{1}{2}\norm{h}^2)$.
-
-\item \textbf{Identification.}  The claim is that $E_P[M_h | X_1^{u^*} = \phi] = \exp(\Psi^{\mathrm{ren}}(\phi))/Z$ $\mu$-a.s., which gives $T_\psi^*\mu = (\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$.
-\end{enumerate}
-
-\textbf{Status:} \textcolor{pending}{Pending verification.}  See Section~\ref{sec:vulnerabilities}.
-
-%======================================================================
-\section{Assessment of Correctness}
-\label{sec:assessment}
-%======================================================================
-
-\subsection{What Is Secure}
-
-The following parts of the proof are \textbf{fully validated} through adversarial verification (21 nodes total):
-
-\begin{center}
-\begin{tabular}{@{}llc@{}}
-\toprule
-\textbf{Stage} & \textbf{Content} & \textbf{Nodes Validated} \\
-\midrule
-A & Regularized RN derivative (1.2, 1.3) & 2 \\
-B & Wick expansion (1.4.1--1.4.4) & 4 \\
-C & Renormalization (1.5.1--1.5.4) & 4 + 2 sub-nodes \\
-C$'$ & Wick power regularity (1.6.1) & 1 \\
-C$'$ & Exponential integrability (1.6.2) & 7 sub-nodes \\
-C$'$ & UI of $\exp(\Psi^{\mathrm{ren}})$ (1.6.3.4) & 1 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-These 21 validated nodes have survived rigorous adversarial challenges.  The exponential integrability result (node 1.6.2) is particularly robust, having survived four refutation--repair cycles.
-
-\subsection{What Is Believed Correct but Unverified}
-
+\paragraph{Step 3: $\mu(B^\gamma) = 1$.}
+Expanding $H_3(u_N; c_N)$ using the decomposition $u = \text{\textdagger} - \dot\Upsilon + v$ and applying:
 \begin{itemize}
-\item \textbf{Node 1.6.3.2} (Skorokhod coupling + a.s.\ convergence of $\Psi_\eps^{\mathrm{ren}}$): Standard application of the Skorokhod representation theorem plus continuous mapping.  Low risk.
-\item \textbf{Node 1.6.3.3} (Finiteness of $Z = E_\mu[\exp(\Psi^{\mathrm{ren}})]$): Follows from the exponential integrability bounds (validated) via H\"older's inequality.  Low risk.
-\item \textbf{Node 1.6.3.8} (Assembly of Vitali convergence): Combines validated nodes.  Low risk.
-\item \textbf{Nodes 1.7 and 1.8} (Strict positivity and symmetry): Trivial.
+\item Lemma 4.2: $(\log N)^{-\gamma} \Wick{\text{\textdagger}_N^3} \to 0$ a.s.\ in $C^{-3/2}$ for $\gamma > 1/2$;
+\item Lemma 4.5: $\Wick{\text{\textdagger}_N^2} v_N + 3c_{N,2}(v_N - \dot\Upsilon_N)$ and $\Wick{\text{\textdagger}_N^2}\dot\Upsilon_N - 3c_{N,2}\text{\textdagger}_N$ both converge to finite limits in $C^{-1-2\kappa}$;
+\item Standard product estimates for the remaining terms;
+\end{itemize}
+one shows that the expression in $B^\gamma$ converges to zero a.s., so $\mu(B^\gamma) = 1$.
+
+\paragraph{Step 4: $(T_\psi^*\mu)(B^\gamma) = 0$.}
+For $u + \psi$ in place of $u$, the same expansion produces the additional term
+\[
+  9(\log N)^{-\gamma} c_{N,2}\ip{\psi_N}{\psi},
+\]
+which, since $c_{N,2} \gtrsim \log N$ and $\ip{\psi_N}{\psi} \to \norm{\psi}^2 > 0$, \emph{diverges} for $\gamma < 1$ (which is compatible with $\gamma > 1/2$). All other terms vanish as before. Hence $u + \psi \notin B^\gamma$ a.s., so $(T_\psi^*\mu)(B^\gamma) = 0$.
+
+\paragraph{Conclusion.} Since $\mu(B^\gamma) = 1$ and $(T_\psi^*\mu)(B^\gamma) = 0$, the measures are mutually singular. $\square$
+
+\subsection{The Critical Mechanism}
+
+The proof hinges on the logarithmically divergent constant $c_{N,2} = \mathbb{E}[\text{\textdagger}_N^{\diamond 2}\,\dot\Upsilon_N] \gtrsim \log N$, which is specific to dimension 3. This constant creates a detectable ``fingerprint'' in the renormalized Wick cubic of the field: after dividing by $(\log N)^\gamma$ for $1/2 < \gamma < 1$, the Wick cubic pairing vanishes for the unshifted field but diverges for the shifted field due to the $c_{N,2}\ip{\psi}{\psi}$ contribution. In dimension 2, the analogous constant is bounded, so no such fingerprint exists and the measures are equivalent.
+
+%======================================================================
+\section{What the \texttt{af} Attempt Claimed}
+\label{sec:af-attempt}
+%======================================================================
+
+\subsection{The Claimed Answer: YES}
+
+The adversarial proof framework claimed the answer was \textbf{YES}: $\mu$ and $T_\psi^*\mu$ are equivalent (mutually absolutely continuous). This was described as ``a natural analogue of the Cameron--Martin theorem for the interacting $\Phi^4_3$ measure.''
+
+\subsection{Proof Strategy}
+
+The \texttt{af} attempt constructed an 84-node proof tree over four adversarial sessions, organized into four stages:
+
+\begin{description}
+\item[Stage A (Nodes 1.2, 1.3):] Establish that the UV-regularized measures satisfy $T_\psi^*\mu_\eps \sim \mu_\eps$ via the classical Cameron--Martin theorem, and compute the regularized Radon--Nikodym derivative $R_\eps = \exp(\Psi_\eps)$.
+
+\item[Stage B (Nodes 1.4.1--1.4.4):] Expand the interaction difference $V_\eps(\phi + \psi) - V_\eps(\phi)$ using Wick calculus, identifying the quartic, quadratic, and linear shift terms.
+
+\item[Stage C (Nodes 1.5.1--1.5.4):] Decompose the exponent as $\Psi_\eps = \Psi_\eps^{\mathrm{ren}} + L_\eps + K_\eps$, where $\Psi_\eps^{\mathrm{ren}}$ converges in $L^p(\mu)$, $K_\eps$ is a deterministic constant, and $L_\eps = 2\delta m_\eps^2 \ip{\psi_\eps}{\phi_\eps}$ is a divergent linear tilt.
+
+\item[Stage D (Nodes 1.6--1.8):] Pass to the limit: establish exponential integrability of $\exp(\Psi^{\mathrm{ren}})$, uniform integrability, and finally identify $T_\psi^*\mu = (\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$.
+\end{description}
+
+\subsection{Scale of the Attempt}
+
+The effort was substantial:
+\begin{itemize}
+\item 84 nodes in the proof tree;
+\item 21 nodes adversarially validated;
+\item 10 refutations identified and repaired across 4 sessions;
+\item 12 technical pitfalls catalogued;
+\item Multiple repair cycles for the hardest steps (4 repairs for exponential integrability alone).
 \end{itemize}
 
-\subsection{What Is Open}
-\label{sec:vulnerabilities}
+%======================================================================
+\section{Critical Comparison: What Went Wrong}
+\label{sec:wrong}
+%======================================================================
 
-The sole remaining substantive gap is \textbf{node 1.6.4.3.3}: the identification of $T_\psi^*\mu$ with $(\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$ via the Bou\'e--Dupuis framework.
+\subsection{The Fundamental Error: Wrong Answer}
 
-\paragraph{Vulnerability 1: Conditional expectation identity (Part 4).}
-The claim $E_P[M_h | X_1^{u^*} = \phi] = \exp(\Psi^{\mathrm{ren}}(\phi))/Z$ is the mathematical heart of the argument.  The stochastic integral $\int\ip{h_s}{dW_s}$ depends on the full Brownian path, not just the terminal value $X_1$.  The conditional expectation over all paths terminating at $\phi$ requires a careful ``first variation of the BG functional'' computation that is currently sketched, not proved.
+The \texttt{af} attempt concluded YES (equivalence) when the correct answer is NO (mutual singularity). This is not a minor technical error in an otherwise-correct proof---it is a failure at the most basic level of mathematical reasoning about the problem. Every node in the proof tree that works \emph{toward establishing equivalence} is either:
+\begin{enumerate}[label=(\alph*)]
+\item correct but insufficient (valid technical lemmas that do not imply the claimed conclusion), or
+\item fundamentally flawed in a way that is invisible when one ``knows'' the answer should be YES.
+\end{enumerate}
 
-\paragraph{Vulnerability 2: Gamma-convergence extension (Part 5).}
-The claim that BG's Gamma-convergence result (Section~6 of~\cite{BG20}) absorbs the regularization artifacts $L_\eps + K_\eps$ into the limit for the \emph{shifted} variational problem $V(\cdot + \psi)$ is asserted as ``standard perturbation theory'' without detailed verification.
+\subsection{Why the Wrong Answer Was Believed}
 
-\paragraph{Vulnerability 3: Sibling node consistency.}
-Nodes 1.6.4.4 and 1.6.4.5 still reference the old (refuted) Boltzmann ratio approach.  If 1.6.4.3.3 is validated, these siblings need restructuring.
+The official solution commentary \cite{FirstProof} identifies a common LLM failure mode: ``the LLM would take as a premise the (wrong!) statement that the $\Phi^4_3$ measure is equivalent to the free field measure, from which it then correctly deduces the (incorrect) claim that the $\Phi^4_3$ measure is quasi-invariant under smooth shifts.''
 
-\subsection{Overall Assessment}
+The \texttt{af} attempt did not make this exact error---it explicitly noted $\mu \perp \mu_0$ as Pitfall \#1. However, it fell into a subtler version of the same trap: it assumed that because the \emph{renormalized exponent} $\Psi^{\mathrm{ren}}$ converges, the density $\exp(\Psi^{\mathrm{ren}})/Z$ must give the Radon--Nikodym derivative. This amounts to assuming that the divergent linear term $L_\eps$ can be ``absorbed'' into the normalization---precisely the unjustified step that the official solution's Section~2.1 identifies as an ``incorrect heuristic.''
+
+\subsection{The Core Logical Gap: Node 1.6.4 (Passage to the Limit)}
+\label{sec:core-gap}
+
+The entire proof hinges on Stage D: showing that $T_\psi^*\mu = (\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$. This is where the proof must fail, because the claimed identity is \textbf{false}---the two measures are mutually singular, so no Radon--Nikodym derivative exists.
+
+The \texttt{af} attempt itself discovered (in Session 4, Refutation 10) that the most natural approach to this step---the tilted measure convergence $\mu_\eps^L \to \mu$---fails catastrophically:
+
+\begin{enumerate}
+\item \textbf{Tightness failure:} The $L_\eps$-tilted measures $\mu_\eps^L = \exp(L_\eps)\,d\mu_\eps / Z$ have divergent means, breaking tightness in $C^{-1/2-\delta}$.
+\item \textbf{Wrong limit identification:} Even if tight, the tilted potential generates $Z_2$-breaking cubic terms, producing a different limiting measure.
+\end{enumerate}
+
+These findings are \emph{correct} and \emph{important}. What the \texttt{af} attempt failed to recognize is that they are not bugs to be repaired---they are \textbf{evidence that the answer is NO}. The divergence of $L_\eps$ is not a technical obstacle to be circumvented; it is the mechanism by which the measures become singular.
+
+\subsection{The Proposed Repair: Bou\'e--Dupuis Variational Approach (Node 1.6.4.3.3)}
+
+After refuting the tilted measure approach, the \texttt{af} attempt proposed a repair via the Barashkov--Gubinelli variational framework: represent $\mu$ as the law of the terminal value $X_1^{u^*}$ of a controlled SDE, represent the shift $\psi$ as a deterministic drift change $h$, and use Girsanov's theorem to compute the density.
+
+This approach is \textbf{fundamentally flawed} because it attempts to establish an identity ($T_\psi^*\mu \ll \mu$ with an explicit density) that is false. Specifically:
+
+\begin{itemize}
+\item The claim that $E_P[M_h | X_1^{u^*} = \phi] = \exp(\Psi^{\mathrm{ren}}(\phi))/Z$ is false. This conditional expectation does not define a well-defined density because $T_\psi^*\mu \perp \mu$.
+
+\item The Girsanov change of measure $M_h$ for a deterministic drift is perfectly valid at the level of the underlying Wiener space. However, the induced change of measure on the \emph{terminal value} $X_1^{u^*}$ (which has law $\mu$) involves precisely the divergent renormalization terms that cause singularity.
+
+\item The claim that ``$L_\eps$ disappears because it is a regularization artifact'' is incorrect. The logarithmic divergence of $c_{N,2}$ (equivalently, $\delta m_\eps^2$) is a genuine feature of the $\Phi^4_3$ theory in dimension 3 that persists in the continuum limit---it is the very mechanism that produces mutual singularity.
+\end{itemize}
+
+\subsection{The ``Incorrect Heuristic'' Connection}
+
+The official solution (Section 2.1) explicitly warns against the heuristic that the \texttt{af} attempt follows. The formal density of $T_\psi^*\mu$ with respect to $\mu$ involves terms proportional to $\Phi^3 - C\Phi$ and $\Phi^2 - c_1$ (Wick powers), and the ``additional logarithmically divergent terms proportional to $c_2$'' cause the density to diverge, ``suggesting (correctly) that $\mu$ and $T_\psi^*\mu$ are mutually singular.''
+
+Hairer then identifies \emph{two problems} with making this heuristic rigorous as a proof of singularity:
+\begin{enumerate}
+\item $\Phi^3 - 3c_1\Phi$ does not define a random distribution (covariance $\sim |x-y|^{-3}$, not integrable in $d = 3$);
+\item Divergent log-densities do not necessarily imply the measures fail to converge.
+\end{enumerate}
+
+The \texttt{af} attempt's error was to attempt the \emph{converse} heuristic (the density converges to something finite) without addressing either of these subtleties. The official proof circumvents both problems by working with the \emph{smeared} quantity $\ip{H_3(P_N u; c_N) + 9c_{N,2} P_N u}{\psi}$ rather than pointwise densities.
+
+%======================================================================
+\section{Node-by-Node Assessment Given the Correct Answer}
+\label{sec:nodes}
+%======================================================================
+
+We now assess each major component of the \texttt{af} proof tree in light of the correct answer (mutual singularity).
+
+\subsection{Stages A--C: Correct and Useful}
 
 \begin{center}
-\begin{tabular}{@{}lp{9cm}@{}}
+\begin{tabular}{@{}lp{7cm}c@{}}
 \toprule
-\textbf{Confidence Level} & \textbf{Assessment} \\
+\textbf{Nodes} & \textbf{Content} & \textbf{Assessment} \\
 \midrule
-Answer (YES) & \textbf{Very high.}  Consistent with the general principle that smooth shifts preserve null sets for well-constructed measures, and with the BG Girsanov singularity result~\cite{BG21girsanov}. \\[4pt]
-Stages A--C & \textbf{High.}  Fully validated through adversarial verification.  The Wick calculus and renormalization are standard. \\[4pt]
-Stage C$'$ (1.6.1--1.6.3) & \textbf{High.}  Key nodes validated; remaining nodes are routine applications of validated results. \\[4pt]
-Stage C$'$ (1.6.4) & \textbf{Medium.}  The BG variational approach is conceptually sound but the details (conditional expectation identity, Gamma-convergence extension) need rigorous verification. \\[4pt]
-Stage D & \textbf{Very high.}  Trivial once Stage C$'$ is complete. \\
+1.2, 1.3 & Regularized equivalence $T_\psi^*\mu_\eps \sim \mu_\eps$ via Cameron--Martin; RN derivative $R_\eps = \exp(\Psi_\eps)$ & \textcolor{proved}{Correct} \\[3pt]
+1.4.1--1.4.4 & Wick expansion of $V_\eps(\phi+\psi) - V_\eps(\phi)$ & \textcolor{proved}{Correct} \\[3pt]
+1.5.1--1.5.4 & Decomposition $\Psi_\eps = \Psi^{\mathrm{ren}} + L_\eps + K_\eps$; convergence of $\Psi^{\mathrm{ren}}$ & \textcolor{proved}{Correct} \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+These stages perform valid algebraic and analytic computations. They are correct regardless of the final answer. Indeed, the official proof implicitly uses the same Wick expansion structure: the decomposition of $H_3(u_N; c_N)$ in the official proof is closely related to the Wick expansion in Stages B--C.
+
+The identification of the divergent linear term $L_\eps = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$ with $\delta m_\eps^2 \sim C\log(1/\eps)$ is a correct and important observation. In the official proof, this divergence reappears as the logarithmic growth of $c_{N,2}$, which is the mechanism driving mutual singularity.
+
+\subsection{Node 1.6.1 (Wick Power Regularity): Correct}
+
+The statement that smeared Wick powers $\ip{f}{\Wick{\phi^k}}$ are well-defined for $f \in C^\infty$ under $\mu$ is correct. The official proof uses this implicitly when pairing against $\psi$.
+
+\subsection{Node 1.6.2 (Exponential Integrability): Correct but Irrelevant}
+\label{sec:exp-int}
+
+The claim that $E_\mu[\exp(\alpha\ip{f}{\Wick{\phi^k}})] < \infty$ for smooth $f$ and $k \in \{1,2,3\}$ is \textbf{almost certainly correct} as a standalone statement---the exponential integrability of smeared Wick powers under $\mu$ is a natural consequence of the Barashkov--Gubinelli variational bounds. This was the hardest result in the \texttt{af} attempt, requiring four repair cycles.
+
+However, this result is \textbf{irrelevant to the correct answer}. The exponential integrability of $\exp(\Psi^{\mathrm{ren}})$ would be needed to define the candidate Radon--Nikodym derivative $\rho = \exp(\Psi^{\mathrm{ren}})/Z$---but since $T_\psi^*\mu \perp \mu$, no such density exists, and the integrability of $\exp(\Psi^{\mathrm{ren}})$ has no bearing on the question. The function $\exp(\Psi^{\mathrm{ren}})$ may well be integrable, but it does not give the density of $T_\psi^*\mu$ with respect to $\mu$.
+
+\subsection{Node 1.6.3 (Uniform Integrability): Correct but Irrelevant}
+
+Similarly, the uniform integrability of $\{\exp(\Psi_\eps^{\mathrm{ren}})\}$ under a Skorokhod coupling is a valid technical statement. The renormalized exponents $\Psi_\eps^{\mathrm{ren}}$ do converge (the renormalized part of the density is well-behaved). But UI of $\exp(\Psi_\eps^{\mathrm{ren}})$ does not imply that $R_\eps = \exp(\Psi_\eps^{\mathrm{ren}} + L_\eps + K_\eps)$ converges to a density, because $L_\eps$ diverges.
+
+\subsection{Node 1.6.4 (Passage to the Limit): \textcolor{refuted}{Fundamentally Flawed}}
+
+This is where the proof necessarily fails. The goal---identifying $T_\psi^*\mu = (\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$---is a false statement. Every approach to establishing this identity must contain an error.
+
+\begin{itemize}
+\item \textbf{Node 1.6.4.3 (Tilted measure convergence):} Correctly refuted by the \texttt{af} adversary in Session 4. The refutation correctly identifies that tightness fails and the limit is wrong.
+
+\item \textbf{Node 1.6.4.3.3 (Bou\'e--Dupuis repair):} Unverified and \textbf{necessarily flawed}. The conditional expectation identity $E[M_h | X_1^{u^*} = \phi] = \exp(\Psi^{\mathrm{ren}}(\phi))/Z$ cannot hold $\mu$-a.s.\ because it would imply $T_\psi^*\mu \ll \mu$, contradicting mutual singularity.
+
+\item \textbf{Nodes 1.6.4.4, 1.6.4.5 (Vitali convergence, assembly):} These reference the refuted tilted measure approach and are incoherent.
+\end{itemize}
+
+\subsection{Nodes 1.7 and 1.8 (Strict Positivity and Symmetry): Vacuously Correct}
+
+Node 1.7 claims $\exp(\Psi^{\mathrm{ren}})/Z > 0$, which is trivially true. Node 1.8 claims the argument applies with $-\psi$. Both are correct \emph{as statements}, but they are steps in a proof of a false conclusion, so their role in the overall argument is moot.
+
+\subsection{Summary Table}
+
+\begin{center}
+\begin{tabular}{@{}lccl@{}}
+\toprule
+\textbf{Component} & \textbf{Correct?} & \textbf{Relevant?} & \textbf{Notes} \\
+\midrule
+Stages A--C (1.2--1.5) & Yes & Partially & Valid lemmas; useful for understanding the problem \\
+Node 1.6.1 & Yes & Yes & Used implicitly in the official proof \\
+Node 1.6.2 & Likely yes & No & Exponential integrability is a nice result but irrelevant \\
+Node 1.6.3 & Likely yes & No & UI of $\exp(\Psi^{\mathrm{ren}})$ is valid but irrelevant \\
+Node 1.6.4 & \textbf{No} & --- & Must fail: attempts to prove a false statement \\
+Node 1.6.4.3 refutation & Yes & Yes & Correctly identifies fundamental obstacles \\
+Node 1.6.4.3.3 & \textbf{No} & --- & Must contain errors \\
+Nodes 1.7, 1.8 & Trivially & No & Steps in a proof of a false conclusion \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 %======================================================================
-\section{Refutation History}
-\label{sec:refutations}
+\section{What the \texttt{af} Attempt Got Right}
+\label{sec:right}
 %======================================================================
 
-The adversarial process has produced 10 refutations across 4 sessions---each a high-value finding that strengthened the proof.
+Despite the wrong answer, the \texttt{af} attempt made several genuine contributions.
 
-\begin{longtable}{@{}clp{7.5cm}@{}}
-\toprule
-\textbf{\#} & \textbf{Node} & \textbf{Error Found} \\
-\midrule
-\endhead
-1 & 1.5.4 & Claimed $E_{\mu_\eps}[R_\eps^p]$ uniformly bounded; FALSE for $p > 1$ (diverges as $\exp(C(p^2-1)\log^2(1/\eps))$).  Repaired: scoped to per-$\eps$. \\[3pt]
-2 & 1.6.1 & Wrong Besov duality conditions ($\alpha > \beta$ required, not $\alpha + \beta > 0$).  Repaired: corrected indices. \\[3pt]
-3 & 1.6.2 & Wick-to-raw power decomposition loses control of exponential moments.  Repaired: abandoned decomposition approach. \\[3pt]
-4 & 1.6.2 & BG concentration inequality applied to enhanced data (not valid---BG concentration is for the field only).  Repaired: 2nd approach. \\[3pt]
-5 & 1.6.2.10.1 & Circular reasoning (invoked parent's conclusion).  Node vestigial. \\[3pt]
-6 & 1.6.2.10.2 & A priori estimate $\norm{\Wick{\phi_\eps^k}}_{C^{-k/2-\delta}} \leq C(1+V_\eps)^{k/4}$ unjustified; uniform lower bound $V_\eps \geq -C_0$ FALSE. \\[3pt]
-7 & 1.6.2.10.2.2 & Cubic coupling called ``irrelevant'' in $d=3$ (engineering dimension $+3/2 > 0$).  Repaired in 1.6.2.10.2.2.1. \\[3pt]
-8 & 1.6.2.10.2.3 & Adapted drifts in Bou\'e--Dupuis treated as deterministic; cubic again called irrelevant.  Hand-waving. \\[3pt]
-9 & 1.6.2.10.2.3.1 & Fabricated BG ``Propositions 4.1 and 4.3''; fictitious Polchinski running-coupling flow.  Repaired in 1.6.2.10.2.3.3. \\[3pt]
-10 & 1.6.4.3 & Tilted measure convergence $\mu_\eps^L \to \mu$ FALSE: tightness fails (divergent tilt), limit identification wrong ($\Phi^4_3$ uniqueness $\neq$ different-potential equivalence). \\
-\bottomrule
-\end{longtable}
+\subsection{Correct Technical Lemmas}
+
+The Wick expansion (Stage B) and renormalization decomposition (Stage C) are correct and nontrivial. The identification of the three components $\Psi^{\mathrm{ren}}$, $L_\eps$, and $K_\eps$, and the convergence of $\Psi^{\mathrm{ren}}$ in $L^p(\mu)$, are valid results that illuminate the structure of the problem.
+
+\subsection{Correct Identification of the Central Difficulty}
+
+The \texttt{af} attempt correctly identified the divergent linear term $L_\eps = 2\delta m_\eps^2\ip{\psi_\eps}{\phi_\eps}$ as the central obstacle. This is essentially the same divergence ($\delta m_\eps^2 \sim c_{N,2} \sim \log N$) that drives mutual singularity in the official proof. The \texttt{af} attempt understood the \emph{source} of the difficulty; it simply drew the wrong conclusion about what the difficulty implies.
+
+\subsection{Correct Self-Refutation of the Tilted Measure Approach}
+
+Refutation 10 (Session 4) is a genuinely valuable finding. The adversarial verification correctly showed:
+\begin{itemize}
+\item Exponential tilts with divergent coefficients break tightness (mean shifts by $\sim\beta^{1/3}$);
+\item $\Phi^4_3$ uniqueness is about regularization independence, not potential independence;
+\item $Z_2$-breaking perturbations change the limiting measure.
+\end{itemize}
+These observations are mathematically correct and are closely related to why the answer is NO. The \texttt{af} system found evidence \emph{against} its own claimed answer but failed to update the answer accordingly.
+
+\subsection{Extensive Catalogue of Pitfalls}
+
+The 12 pitfalls identified across 4 sessions constitute a useful reference for anyone working on $\Phi^4_3$ problems. In particular:
+\begin{itemize}
+\item Pitfall \#1 ($\mu \perp \mu_0$) is fundamental context.
+\item Pitfall \#4 (the $L^p$ route to UI is blocked: $E_{\mu_\eps}[R_\eps^p]$ diverges for $p > 1$) is directly related to the divergence mechanism that causes singularity.
+\item Pitfalls \#11 and \#12 (divergent tilts break tightness; uniqueness $\neq$ potential equivalence) are essentially correct observations about \emph{why the answer is NO}, even though they were framed as obstacles to overcome rather than evidence of mutual singularity.
+\end{itemize}
+
+\subsection{Adversarial Process as Error Detection}
+
+The adversarial framework successfully detected 10 errors across 4 sessions. This is impressive error-detection capability. The problem was not in detecting errors but in correctly interpreting their significance: the system treated every error as a \emph{repairable flaw in a correct proof} rather than considering whether the accumulation of obstacles might indicate a wrong answer.
 
 %======================================================================
-\section{Key Pitfalls Discovered}
-\label{sec:pitfalls}
+\section{Root Cause Analysis: Why the Answer Was Wrong}
+\label{sec:root-cause}
 %======================================================================
 
-These lessons, distilled from the refutation history, constrain future proof attempts.
+\subsection{Confirmation Bias in the Proof Search}
 
+The \texttt{af} system committed to the answer YES at the outset and never revisited this commitment, even when faced with substantial evidence against it. This is a form of confirmation bias: every obstacle was treated as a technical challenge to overcome, never as evidence that the conjecture might be false.
+
+In particular, the system's response to Refutation 10 is revealing. Having correctly shown that the tilted measure approach fails because of divergent linear tilts, the system proposed an alternative approach (Bou\'e--Dupuis) rather than considering whether the failure might indicate mutual singularity. The correct inference from Refutation 10 is: ``the divergent linear term $L_\eps$ cannot be absorbed into the limit, which suggests $T_\psi^*\mu$ and $\mu$ have genuinely different singularity structures, i.e., they are mutually singular.''
+
+\subsection{Lack of ``Disprove'' Mode}
+
+The problem statement asks to ``prove or disprove,'' but the \texttt{af} system appears to have operated exclusively in ``prove'' mode. A well-designed automated prover should:
 \begin{enumerate}
-\item \textbf{$\mu \perp \mu_0$.}  Never assume $\mu \sim \mu_0$~\cite{BG21girsanov}.
-
-\item \textbf{Do not decompose Wick powers into raw powers} for exponential moment bounds.
-
-\item \textbf{No Fatou across changing measures.}  Use Skorokhod coupling + Vitali, not Fatou's lemma applied to $\mu_\eps \to \mu$.
-
-\item \textbf{The $L^p$ route to UI is blocked.}  $E_{\mu_\eps}[R_\eps^p]$ diverges for any $p > 1$.
-
-\item \textbf{BG concentration is for $\phi$ only}, not the enhanced data $(\phi, \Wick{\phi^2}, \Wick{\phi^3})$.
-
-\item \textbf{Besov duality requires a strict regularity gap}: $\alpha > \beta$, not $\alpha + \beta > 0$.
-
-\item \textbf{Cubic coupling is relevant in $d=3$.}  Engineering dimension $= 3/2 > 0$.  Use Young's inequality to subordinate to the quartic.
-
-\item \textbf{BG (2020) uses Bou\'e--Dupuis + paracontrolled + Gamma-convergence}, not Polchinski running-coupling flows.
-
-\item \textbf{Adapted drifts in Bou\'e--Dupuis are random}, not deterministic.  Cross-terms do not vanish.
-
-\item \textbf{Do not fabricate citations.}  Always verify theorem numbers against the actual paper.
-
-\item \textbf{Divergent linear tilts break tightness.}  $\exp(\beta\ip{\psi}{\phi})$ with $\beta \to \infty$ shifts the effective mean by $\sim\beta^{1/3}$, killing $C^{-1/2-\delta}$ tightness.
-
-\item \textbf{$\Phi^4_3$ uniqueness $\neq$ different potentials giving the same measure.}  Uniqueness is about regularization independence; $Z_2$-breaking perturbations change the limit.
+\item Consider both YES and NO as initial hypotheses;
+\item Seek evidence for and against each;
+\item Attempt to construct a distinguishing event or function (for NO) as well as a density (for YES);
+\item Update its belief about the answer based on accumulated evidence.
 \end{enumerate}
 
+The \texttt{af} system did none of these. It never attempted to construct a set $A$ with $\mu(A) = 1$ and $(T_\psi^*\mu)(A) = 0$, which is the natural approach for proving singularity.
+
+\subsection{The Heuristic Trap}
+
+The official solution warns that a ``tempting heuristic'' suggests mutual singularity, and identifies two problems with making it rigorous. The \texttt{af} system fell into the \emph{opposite} heuristic trap: it assumed that because $\Psi^{\mathrm{ren}}$ has nice convergence properties, the density $\exp(\Psi^{\mathrm{ren}})/Z$ should give the Radon--Nikodym derivative. But nice convergence of $\Psi^{\mathrm{ren}}$ does not overcome the divergence of $L_\eps$---the two phenomena coexist, and it is $L_\eps$ that determines the answer.
+
+\subsection{Missing Domain Expertise}
+
+The correct proof requires deep knowledge of:
+\begin{itemize}
+\item The specific stochastic objects in regularity structures (the tree notation $\text{\textdagger}$, $\lor$, $\checkmark$, $\dot\Upsilon$, etc.);
+\item The paracontrolled decomposition $u = \text{\textdagger} - \dot\Upsilon + v$ and the improved regularity of $v$;
+\item The specific divergent constant $c_{N,2} = \mathbb{E}[\text{\textdagger}_N^{\diamond 2}\,\dot\Upsilon_N]$ and its logarithmic growth;
+\item The technique of constructing distinguishing events via renormalized Wick polynomials.
+\end{itemize}
+
+The \texttt{af} system worked with the variational (Barashkov--Gubinelli) formulation rather than the regularity-structures/paracontrolled formulation. While the BG framework is powerful for constructing $\mu$ and establishing integrability bounds, the official proof of mutual singularity requires the more detailed stochastic analysis provided by the paracontrolled decomposition. This suggests that the choice of mathematical framework can bias the prover toward certain conclusions.
+
 %======================================================================
-\section{Recommended Next Steps}
-\label{sec:next}
+\section{Lessons Learned}
+\label{sec:lessons}
 %======================================================================
+
+\subsection{For Automated Theorem Proving}
 
 \begin{enumerate}
-\item \textbf{Verify node 1.6.4.3.3} (Bou\'e--Dupuis identification).  This is the sole remaining hard step.  Focus on: (a) the conditional expectation identity in Part~4, (b) the Gamma-convergence extension in Part~5.
+\item \textbf{Always consider both truth values.} For prove-or-disprove problems, the prover should maintain parallel proof attempts for both YES and NO, and allocate resources based on evidence. The accumulation of obstacles (10 refutations, 4 repair cycles for a single node) should trigger reconsideration of the answer.
 
-\item \textbf{Verify nodes 1.6.3.2, 1.6.3.3, 1.6.3.8} (Skorokhod coupling, finiteness of $Z$, assembly).  These are routine but formally unverified.
+\item \textbf{Interpret refutations as evidence, not just bugs.} When a natural approach to proving a statement fails for deep mathematical reasons (as opposed to technical errors), this is evidence against the statement. The \texttt{af} system's Refutation 10 essentially contains the key insight needed for the correct proof (the divergent linear term cannot be handled), but this insight was wasted because it was framed as a bug rather than a clue.
 
-\item \textbf{Restructure sibling nodes 1.6.4.4, 1.6.4.5} if the BG approach is validated, since the old Boltzmann ratio approach is abandoned.
+\item \textbf{Attempted repairs that keep failing may signal a wrong conjecture.} The pattern of repeated refutation and repair (4 cycles for node 1.6.2, followed by refutation of node 1.6.4.3 and an unverified repair in 1.6.4.3.3) is a strong signal. A well-calibrated system should lower its confidence in the conjecture with each successive failure, especially when the failures have deep structural causes.
 
-\item \textbf{Prove and verify nodes 1.7, 1.8} (strict positivity and symmetry $\psi \to -\psi$).
+\item \textbf{Framework choice matters.} The BG variational framework naturally suggests equivalence (it provides good control over the measure via stochastic control theory), while the paracontrolled/regularity-structures framework reveals the fine structure that distinguishes the shifted and unshifted measures. Automated provers should consider multiple mathematical frameworks when tackling open problems.
 
-\item \textbf{Close wrapper nodes} 1.4, 1.5, 1.6, 1.1, 1 by summarizing validated children.
+\item \textbf{Do not fabricate or misapply results to fill gaps.} Refutation 9 (fabricated BG propositions) and Refutation 10 (misapplication of $\Phi^4_3$ uniqueness) illustrate a dangerous failure mode: when a proof step is hard, the system may ``hallucinate'' a result that fills the gap. Rigorous verification must catch such fabrications, and the system should treat the inability to find a valid argument as informative.
 \end{enumerate}
 
-%======================================================================
-\section{Node Statistics}
-\label{sec:stats}
-%======================================================================
+\subsection{For the Specific Problem}
 
-\begin{center}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Epistemic State} & \textbf{Count} & \textbf{Meaning} \\
-\midrule
-\textcolor{pending}{Pending} & 49 & Awaiting proof or verification \\
-\textcolor{proved}{Validated} & 21 & Passed adversarial verification \\
-\textcolor{refuted}{Refuted} & 8 & Disproved (all repaired) \\
-\textcolor{archived}{Archived} & 6 & Superseded by repairs \\
-\midrule
-\textbf{Total} & \textbf{84} & \\
-\bottomrule
-\end{tabular}
-\end{center}
+\begin{enumerate}
+\item The divergence $c_{N,2} \sim \log N$ (equivalently, $\delta m_\eps^2 \sim \log(1/\eps)$) is the \emph{mechanism of mutual singularity}, not an obstacle to equivalence. Any proof attempt that tries to ``absorb'' or ``cancel'' this divergence is doomed.
 
-\noindent Of the 49 pending nodes, many are auto-generated children (detailed sub-proofs of validated parents) or exploratory branches.  The \emph{critical path} pending nodes are: 1.6.3.2, 1.6.3.3, 1.6.3.8, 1.6.4.3.3, 1.7, 1.8.
+\item The renormalized exponent $\Psi^{\mathrm{ren}}$ converges, and $\exp(\Psi^{\mathrm{ren}})$ may well be integrable. But this does not mean $\exp(\Psi^{\mathrm{ren}})/Z$ is the Radon--Nikodym derivative. The convergence of $\Psi^{\mathrm{ren}}$ and the divergence of $L_\eps$ are independent phenomena; the latter dominates.
+
+\item The correct proof technique---constructing a distinguishing event from renormalized Wick polynomials---is fundamentally different from the density-based approach pursued by the \texttt{af} system. Singularity proofs require \emph{separation} (finding a measurable set that distinguishes the two measures), not \emph{computation} (finding a density function).
+\end{enumerate}
+
+\subsection{Broader Observations}
+
+\begin{enumerate}
+\item The problem is at the frontier of constructive QFT and specifically designed to probe deep structural properties of the $\Phi^4_3$ measure. It is unsurprising that an automated system would struggle, especially given that the official solution relies on very recent results (Hairer--Kusuoka--Nagoji 2024, Hairer--Peroni, in preparation).
+
+\item The \texttt{af} adversarial process is effective at \emph{local} error detection (finding flaws in specific proof steps) but not at \emph{global} hypothesis evaluation (questioning whether the overall direction is correct). Incorporating a mechanism for global hypothesis testing---perhaps by periodically attempting the negation---would be a significant improvement.
+
+\item The amount of valid technical work produced by the \texttt{af} system (Stages A--C, exponential integrability bounds, catalogue of pitfalls) is nontrivial, even though it does not resolve the problem. This suggests that automated tools can be useful as \emph{research assistants} that produce correct intermediate results, even when they cannot navigate the high-level strategy of a proof.
+\end{enumerate}
 
 %======================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 %======================================================================
 
-The equivalence of $\mu$ and $T_\psi^*\mu$ under smooth shifts is very likely true.  The adversarial proof investigation has:
+The \texttt{af} automated proof attempt at Problem~1 produced a substantial body of work---84 nodes, 21 validated, 10 refutations detected and addressed---but arrived at the wrong answer. The measures $\mu$ and $T_\psi^*\mu$ are \textbf{mutually singular}, not equivalent.
 
-\begin{itemize}
-\item \textbf{Validated} the complete pipeline from regularized RN derivative through Wick expansion, renormalization, exponential integrability, and uniform integrability (Stages A--C, 21 nodes);
-\item \textbf{Identified and repaired} 10 errors through rigorous adversarial verification, including 4 repair cycles for exponential integrability and the critical refutation of the tilted-measure-convergence approach;
-\item \textbf{Proposed} a Bou\'e--Dupuis variational approach for the remaining step (passage to the limit), which avoids the refuted tilted-measure strategy;
-\item \textbf{Catalogued} 12 pitfalls that constrain future proof attempts.
-\end{itemize}
+The core error was a failure of hypothesis management: the system committed to YES at the outset and interpreted all subsequent difficulties as technical obstacles rather than evidence against the conjecture. Ironically, the system's own Refutation~10 contains the key insight (the divergent linear term $L_\eps$ cannot be absorbed) that, correctly interpreted, points toward mutual singularity.
 
-\noindent The single remaining hard step is node 1.6.4.3.3: verifying that the BG stochastic control framework correctly identifies $T_\psi^*\mu = (\exp(\Psi^{\mathrm{ren}})/Z)\cdot\mu$.  The mathematical content of this identification---that a smooth shift in distribution space corresponds to a deterministic drift change in the BG optimal control problem---is conceptually natural and consistent with the broader BG programme~\cite{BG20,BG21girsanov}.
+The correct proof constructs a distinguishing event from the logarithmically divergent constant $c_{N,2}$, which creates a detectable ``fingerprint'' in the renormalized Wick cubic of the field. This fingerprint vanishes for the unshifted measure but persists (and diverges) for the shifted measure, witnessing mutual singularity. The \texttt{af} system never explored this direction because it was exclusively searching for a density, not a separating set.
+
+Despite the wrong answer, the \texttt{af} attempt produced valid intermediate results (Wick expansion, renormalization decomposition, exponential integrability bounds) and correctly identified the central difficulty (the divergent mass counterterm). The adversarial process effectively detected local errors. The principal failure was global: the inability to update the hypothesis in light of accumulating evidence.
 
 \begin{thebibliography}{99}
+
+\bibitem{FirstProof}
+M.~Abouzaid, A.~Blumberg, M.~Hairer, N.~Kileel, T.~Kolda, J.~Nelson, A.~Spielman, N.~Srivastava, R.~Ward, S.~Weinberger, and L.~Williams,
+\emph{First Proof: Solutions and Comments},
+February 2026.
 
 \bibitem{Hairer14}
 M.~Hairer,
 \emph{A theory of regularity structures},
 Invent.\ Math.\ \textbf{198} (2014), 269--504.
 
-\bibitem{GH19}
-M.~Gubinelli and M.~Hofmanov\'a,
-\emph{Global solutions to elliptic and parabolic $\Phi^4$ models in Euclidean space},
-Comm.\ Math.\ Phys.\ \textbf{368} (2019), 1201--1266.
+\bibitem{GIP15}
+M.~Gubinelli, P.~Imkeller, and N.~Perkowski,
+\emph{Paracontrolled distributions and singular PDEs},
+Forum Math.\ Pi \textbf{3} (2015), e6, 75pp.
+
+\bibitem{CC18}
+R.~Catellier and K.~Chouk,
+\emph{Paracontrolled distributions and the 3-dimensional stochastic quantization equation},
+Ann.\ Probab.\ \textbf{46} (2018), 2621--2679.
 
 \bibitem{BG20}
 N.~Barashkov and M.~Gubinelli,
@@ -432,111 +474,26 @@ N.~Barashkov and M.~Gubinelli,
 \emph{The $\Phi^4_3$ measure via Girsanov's theorem},
 Electron.\ J.\ Probab.\ \textbf{26} (2021), 1--29.
 
-\bibitem{BG21tails}
-N.~Barashkov and M.~Gubinelli,
-\emph{On the variational method for Euclidean quantum fields in infinite volume},
-arXiv:2112.05562, 2021.
+\bibitem{Gli68}
+J.~Glimm,
+\emph{Boson fields with the $:\Phi^4:$ interaction in three dimensions},
+Comm.\ Math.\ Phys.\ \textbf{10} (1968), 1--47.
 
-\bibitem{Bogachev98}
-V.~I.~Bogachev,
-\emph{Gaussian Measures},
-Mathematical Surveys and Monographs, AMS, 1998.
+\bibitem{HKN24}
+M.~Hairer, S.~Kusuoka, and H.~Nagoji,
+\emph{Singularity of solutions to singular SPDEs},
+arXiv preprint, 2024.
 
-\bibitem{MW17}
-J.-C.~Mourrat and H.~Weber,
-\emph{The dynamic $\Phi^4_3$ model comes down from infinity},
-Comm.\ Math.\ Phys.\ \textbf{356} (2017), 673--753.
+\bibitem{HM18}
+M.~Hairer and K.~Matetski,
+\emph{Discretisations of rough stochastic PDEs},
+Ann.\ Probab.\ \textbf{46} (2018), 1651--1709.
 
-\bibitem{BB19}
-R.~Bauerschmidt and T.~Bodineau,
-\emph{A very simple proof of the LSI for high temperature spin systems},
-J.\ Funct.\ Anal.\ \textbf{276} (2019), 2582--2588.
+\bibitem{GH19}
+M.~Gubinelli and M.~Hofmanov\'a,
+\emph{Global solutions to elliptic and parabolic $\Phi^4$ models in Euclidean space},
+Comm.\ Math.\ Phys.\ \textbf{368} (2019), 1201--1266.
 
 \end{thebibliography}
-
-\newpage
-%======================================================================
-\appendix
-\section{Full Proof Tree (\texttt{af status} Export)}
-\label{app:tree}
-%======================================================================
-
-The complete proof tree as exported from the adversarial proof framework.
-Status key: \textcolor{proved}{\textbf{V}}~=~validated,
-\textcolor{pending}{\textbf{P}}~=~pending,
-\textcolor{refuted}{\textbf{R}}~=~refuted,
-\textcolor{archived}{\textbf{A}}~=~archived.
-
-{\small\begin{verbatim}
-1 [P] Main conjecture: mu ~ T_psi* mu
-  1.1 [P] Proof strategy (wrapper)
-  1.2 [V] Setup: mu_eps ~ mu_0, Cameron-Martin, T_psi*mu_eps ~ mu_eps
-    1.2.1 [P]   V_eps is a.s. finite
-    1.2.2 [P]   exp(-V_eps) strictly positive
-    1.2.3 [P]   Z_eps finite and positive
-    1.2.4 [P]   mu_eps ~ mu_0
-    1.2.5 [P]   T_psi*mu_0 ~ mu_0 (Cameron-Martin)
-    1.2.6 [P]   T_psi*mu_eps ~ mu_eps (QED)
-  1.3 [V] Regularized RN derivative R_eps = exp(Psi_eps)
-    1.3.1 [P]   Detailed proof
-  1.4 [P] Wick expansion of interaction difference (wrapper)
-    1.4.1 [V]   Quartic Wick shift
-      1.4.1.1 [P]   Detailed proof
-    1.4.2 [V]   Quadratic Wick shift
-      1.4.2.1 [P]   Detailed proof
-    1.4.3 [V]   Full interaction difference
-      1.4.3.1 [P]   Detailed proof
-    1.4.4 [V]   UV divergence analysis
-      1.4.4.1 [P]   Detailed proof
-  1.5 [P] Renormalized exponent identification (wrapper)
-    1.5.1 [V]   Decomposition: Psi_eps = Psi^ren + L_eps + K_eps
-      1.5.1.1 [V]   Detailed proof
-    1.5.2 [V]   Normalization constraint
-      1.5.2.1 [V]   Detailed proof
-    1.5.3 [V]   Convergence of Psi^ren in L^p(mu)
-      1.5.3.1 [P]   Detailed proof
-    1.5.4 [V]   Divergent linear term absorption (scoped)
-      1.5.4.1 [P]   Detailed proof
-      1.5.4.2 [P]   Refutation report (Session 1)
-      1.5.4.3 [P]   Repaired proof
-  1.6 [P] Convergence and L^1 integrability (wrapper)
-    1.6.1 [V]   Well-definedness of smeared Wick powers
-      1.6.1.1--1.6.1.7 [P]   Sub-proofs + refutation/repair cycle
-    1.6.2 [R]   Exponential integrability (original, refuted)
-      1.6.2.1--1.6.2.4 [A]   1st attempt (archived)
-      1.6.2.5 [V]   k=1 sub-Gaussian (repaired)
-      1.6.2.6--1.6.2.9 [mixed]   2nd attempt (partially refuted)
-      1.6.2.10 [P]  3rd/4th repair umbrella
-        1.6.2.10.1 [P]   L^p growth rate (vestigial)
-        1.6.2.10.2 [R]   3rd attempt (refuted)
-          1.6.2.10.2.1 [V]   Partition function ratio
-          1.6.2.10.2.2 [R]   Structural requirements (refuted)
-            1.6.2.10.2.2.1 [V]   5th repair (validated)
-          1.6.2.10.2.3 [R]   Main BD step (refuted)
-            1.6.2.10.2.3.1 [R]   6th repair (refuted: fabricated citations)
-            1.6.2.10.2.3.2 [A]   7th repair (archived)
-            1.6.2.10.2.3.3 [V]   7th repair (validated)
-          1.6.2.10.2.4 [V]   QED assembly
-        1.6.2.10.3 [V]   Skorokhod passage mu_eps -> mu
-        1.6.2.10.4 [V]   Full exponential integrability QED
-    1.6.3 [P]   Uniform integrability (wrapper)
-      1.6.3.1 [P]   Repaired Scheffe-Vitali approach
-      1.6.3.2 [P]   Skorokhod coupling + a.s. convergence
-      1.6.3.3 [P]   Z = E_mu[exp(Psi^ren)] finite and positive
-      1.6.3.4 [V]   UI of exp(Psi^ren) on Skorokhod space
-      1.6.3.5--1.6.3.8 [P]   Assembly nodes
-    1.6.4 [P]   Passage to the limit (wrapper)
-      1.6.4.1 [P]   Candidate measure rho well-defined
-      1.6.4.2 [P]   Boltzmann ratio form
-      1.6.4.3 [P]   *** REPAIRED: honest assessment + BD approach ***
-        1.6.4.3.1 [P]   Old tightness argument (superseded)
-        1.6.4.3.2 [P]   Refutation report (Session 4)
-        1.6.4.3.3 [P]   *** BD variational identification (CURRENT FRONTIER) ***
-      1.6.4.4 [P]   Vitali convergence (needs restructuring)
-        1.6.4.4.1 [P]   Uniform exponential bounds
-      1.6.4.5 [P]   Assembly (needs restructuring)
-  1.7 [P] Strict positivity: R > 0 mu-a.s.
-  1.8 [P] Symmetry: psi -> -psi gives mu << T_psi*mu
-\end{verbatim}}
 
 \end{document}

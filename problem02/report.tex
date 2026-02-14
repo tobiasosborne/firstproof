@@ -10,18 +10,14 @@
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{longtable}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{tikz}
-\usetikzlibrary{trees,arrows.meta,positioning}
 
 % --- Theorem environments ---
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{conjecture}[theorem]{Conjecture}
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
@@ -34,35 +30,36 @@
 \newcommand{\frq}{\mathfrak{q}}
 \newcommand{\GL}{\mathrm{GL}}
 \newcommand{\Ind}{\mathrm{Ind}}
-\newcommand{\St}{\mathrm{St}}
 \DeclareMathOperator{\vol}{vol}
-\DeclareMathOperator{\val}{val}
 \DeclareMathOperator{\Wh}{\mathcal{W}}
-\DeclareMathOperator{\Ki}{\mathcal{K}}
-
-% --- Colors for status ---
-\definecolor{proved}{RGB}{0,128,0}
-\definecolor{pending}{RGB}{200,150,0}
-\definecolor{refuted}{RGB}{200,0,0}
-\definecolor{archived}{RGB}{128,128,128}
-\definecolor{critical}{RGB}{180,0,0}
+\DeclareMathOperator{\trace}{trace}
+\newcommand{\eps}{\varepsilon}
 
 % --- Title ---
-\title{\textbf{Report on Problem~2: Existence of Whittaker Functions\\for Rankin--Selberg Integrals}\\[6pt]
-\large Adversarial Proof Framework Analysis}
-\author{Generated from the \texttt{af} proof workspace\\
-First Proof Project}
+\title{\textbf{Comparative Analysis: Official Solution vs.\ Adversarial Proof Attempt\\for Problem~2 (Whittaker Functions for Rankin--Selberg Integrals)}\\[6pt]
+\large First Proof Benchmark}
+\author{Automated Analysis\\First Proof Project}
 \date{February 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This report documents the adversarial proof investigation of Problem~2 from the First Proof paper (posed by Paul D.\ Nelson): whether, for a generic irreducible admissible representation $\Pi$ of $\GL_{n+1}(F)$ over a non-archimedean local field $F$, there exists a single Whittaker function $W \in \Wh(\Pi, \psi^{-1})$ such that for every generic irreducible admissible $\pi$ of $\GL_n(F)$, the local Rankin--Selberg integral is finite and nonzero for all $s \in \C$.
-The answer is \textbf{YES}: the essential Whittaker function (new vector) $W^\circ$ of $\Pi$ works universally.
-Over three adversarial sessions, we have constructed a 17-node proof tree with 5 nodes validated, 12 pending with 57 open challenges, and no refutations.
-The proof follows a three-case strategy by type of $\pi$: compact Kirillov support collapse (unramified), supercuspidal torus collapse (ramified supercuspidal), and epsilon factor identification (ramified non-supercuspidal).
-All three branches face significant open challenges, particularly concerning the Kirillov model evaluation for $n \geq 2$ and the test vector identification with epsilon factors.
+We critically compare the official solution to Problem~2 of the First Proof benchmark
+(posed by Paul D.\ Nelson) with an automated adversarial proof (\texttt{af}) attempt.
+The problem asks whether, for a generic irreducible admissible representation $\Pi$ of
+$\GL_{n+1}(F)$ over a non-archimedean local field, there exists a single Whittaker
+function $W$ such that for every generic $\pi$ of $\GL_n(F)$, the local Rankin--Selberg
+integral is finite and nonzero for all $s \in \C$.  Both approaches answer \textbf{YES}.
+The official solution uses the Godement--Jacquet functional equation to relate the
+unipotent-shifted Rankin--Selberg integral to a $K_1(\frq)$-integral of the newvector,
+obtaining an explicit constant in two pages.  The \texttt{af} attempt instead pursued a
+three-case strategy (unramified, supercuspidal, non-supercuspidal ramified) via Iwasawa
+unfolding and Kirillov model support arguments, accumulating 57 open challenges over 17
+nodes without reaching a complete proof.  We identify which of the five systematic
+issues found by \texttt{af} were genuine mathematical obstacles versus artifacts of the
+wrong proof strategy, and extract lessons for future automated theorem proving in
+representation theory.
 \end{abstract}
 
 \tableofcontents
@@ -73,480 +70,625 @@ All three branches face significant open challenges, particularly concerning the
 \label{sec:problem}
 %======================================================================
 
-\subsection{Setup}
+Let $F$ be a non-archimedean local field with ring of integers $\fro$, maximal ideal
+$\frp$, and residue field cardinality $q$.  Let $\psi : F \to \C^\times$ be a nontrivial
+additive character of conductor $\fro$.  Set $G_r := \GL_r(F)$, $K_r := \GL_r(\fro)$,
+and let $N_r < G_r$ denote the upper-triangular unipotent subgroup.
 
-The problem, posed by Paul D.\ Nelson (Aarhus University), lies in the representation theory of $p$-adic groups and the theory of automorphic $L$-functions.
+Let $\Pi$ be a generic irreducible admissible representation of $G_{n+1}$, realized in
+its $\psi^{-1}$-Whittaker model $\Wh(\Pi, \psi^{-1})$.
 
-\begin{definition}[Non-archimedean local field]
-Let $F$ be a non-archimedean local field (e.g., $\mathbb{Q}_p$ or $\mathbb{F}_q((t))$) with ring of integers $\fro$, maximal ideal $\frp = (\varpi)$, and residue field $\fro/\frp \cong \mathbb{F}_q$.  Let $\psi : F \to \C^\times$ be a nontrivial additive character of conductor $\fro$.
-\end{definition}
-
-\begin{definition}[Whittaker model and Rankin--Selberg integral]
-Let $\Pi$ be a generic irreducible admissible representation of $\GL_{n+1}(F)$, realized in its $\psi^{-1}$-Whittaker model $\Wh(\Pi, \psi^{-1})$.
-For a generic irreducible admissible representation $\pi$ of $\GL_n(F)$ with conductor ideal $\frq$ and generator $Q \in F^\times$ of $\frq^{-1}$, set
+\begin{theorem}[Nelson]
+\label{thm:main}
+There exists $W \in \Wh(\Pi, \psi^{-1})$ with the following property.  For every generic
+irreducible admissible $\pi$ of $G_n$ with conductor ideal $\frq$ and generator
+$Q \in F^\times$ of $\frq^{-1}$, setting $u_Q := I_{n+1} + Q\, E_{n,n+1}$, there exists
+$V \in \Wh(\pi, \psi)$ such that the local Rankin--Selberg integral
 \[
-  u_Q := I_{n+1} + Q \cdot E_{n,n+1} \in \GL_{n+1}(F),
+  \ell_{\mathrm{RS}}(s, W, V) :=
+  \int_{N_n \backslash G_n} W\bigl(\mathrm{diag}(g,1) \cdot u_Q\bigr)\, V(g)\,
+  |\det g|^{s - 1/2}\, dg
 \]
-where $E_{i,j}$ is the elementary matrix with 1 in position $(i,j)$.
-The \emph{local Rankin--Selberg integral} is
+is finite and nonzero for all $s \in \C$.
+\end{theorem}
+
+The critical subtlety, emphasized in the authors' commentary, is that $W$ must be
+\emph{independent of} $\pi$.  Without this universality requirement, the problem would be
+much easier and well-known.
+
+%======================================================================
+\section{The Official Solution}
+\label{sec:official}
+%======================================================================
+
+\subsection{Overview}
+
+The official solution (Nelson, with Jana) is remarkably compact---roughly two pages of
+mathematics---and proceeds via a single unified argument that avoids any case splitting by
+the type of $\pi$.  The key ideas are:
+
+\begin{enumerate}[label=(\roman*)]
+\item \textbf{Choice of $W$:} Define $W_0 \in \Wh(\Pi, \psi^{-1})$ via the Kirillov
+  model extension of the function
+  \[
+    W_0(g) := \int_{N_n} \mathbf{1}_{K_n}(xg)\, \psi(x)\, dx
+  \]
+  on $G_n$, extended to $G_{n+1}$ by the theory of the Kirillov model (Bernstein).
+  The actual test vector for $\Pi$ is $u_Q W_0$ (a unipotent translate of $W_0$).
+
+\item \textbf{Choice of $V$:} Take $V$ to be the normalized newvector of $\pi$---the
+  unique $K_1(\frq)$-invariant vector with $V(1) = 1$.
+
+\item \textbf{Godement--Jacquet bridge:} Apply the Godement--Jacquet local functional
+  equation (Lemma~2 in the solution) with a carefully chosen Schwartz function
+  $\phi \in \mathcal{S}(M_n(F))$ and a function $\beta \in \mathcal{S}^e(F^\times)$
+  (depending on $\pi$ only through its conductor) to transform the Rankin--Selberg
+  integral into a $K_1(\frq)$-integral.
+
+\item \textbf{Reduction to newvector theory:} The transformed integral evaluates to
+  $|Q|^n \cdot \vol(K_1(\frq))$ by $K_1(\frq)$-invariance of $V$ and the normalization
+  $V(1) = 1$.
+\end{enumerate}
+
+\subsection{Key Technical Ingredients}
+
+\paragraph{The Schwartz function $\phi$ and the weight $\beta$.}
+The solution defines $\phi_0 = \mathbf{1}_{M_n(\fro)}$ and
 \[
-  I(s, W, V) := \int_{N_n \backslash \GL_n(F)} W\bigl(\mathrm{diag}(g, 1) \cdot u_Q\bigr) \, V(g) \, |\det g|^{s - 1/2} \, dg,
+  \phi(x) := \psi(-x_{nn})\, \phi_0(x\, d_Q^{-1}),
 \]
-where $W \in \Wh(\Pi, \psi^{-1})$ and $V \in \Wh(\pi, \psi)$.
-\end{definition}
+where $d_Q = \mathrm{diag}(1, \ldots, 1, Q)$.  The function $\beta$ is defined via
+Mellin inversion:
+\[
+  \widetilde{\beta}(s) := \frac{\eps(\tfrac{1}{2}+s, \pi, \psi)}{L(\tfrac{1}{2}+s, \pi)},
+\]
+and has the crucial properties that $\beta$ is supported on
+$\{y : |Q| \leq |y| \leq |Q| q^n\}$ while $\beta^\sharp$ (the transform of $\beta$
+through the gamma factor) is supported on $\{y : 1 \leq |y| \leq q^n\}$ and takes the
+value $1$ on $\fro^\times$.
 
-\subsection{The Question}
+\paragraph{The Godement--Jacquet identity (Lemma~4).}
+For unitary generic $\pi$ and $f = V$ (a Whittaker function treated as a generalized
+matrix coefficient), the identity
+\[
+  \int_{G_n} \phi(g)\, f(g)\, \beta(\det g)\, |\det g|^{n/2}\, dg
+  =
+  \int_{G_n} \phi^\wedge(g)\, f^\vee(g)\, \beta^\sharp(\det g)\, |\det g|^{n/2}\, dg
+\]
+holds with absolute convergence on both sides.  This is established by inserting the
+Mellin expansion of $\beta$, recognizing the Godement--Jacquet zeta integral, applying
+the local functional equation, and re-expanding.
 
-\begin{conjecture}[Nelson]
-\label{conj:main}
-Must there exist $W \in \Wh(\Pi, \psi^{-1})$ such that for every generic irreducible admissible $\pi$ of $\GL_n(F)$, there exists $V \in \Wh(\pi, \psi)$ for which $I(s, W, V)$ is finite and nonzero for all $s \in \C$?
-\end{conjecture}
+\paragraph{The factorization identity (Lemma~5).}
+Two identities link the Schwartz data $(\phi, \beta)$ to the Rankin--Selberg integral on
+the left side and to the congruence subgroup on the right:
+\begin{align}
+  \text{(Left):} &\quad \int_{N_n} \beta(\det xg)\, \phi(xg)\, \psi(x)\, dx
+    = \eps(\tfrac{1}{2}, \pi, \psi)\, W_0(g\, t_Q), \label{eq:left} \\
+  \text{(Right):} &\quad \beta^\sharp(\det g)\, \phi^\wedge(g)
+    = |Q|^n\, \mathbf{1}_{K_1(\frq)}(g). \label{eq:right}
+\end{align}
 
-\noindent\textbf{Answer: YES.}  The essential Whittaker function $W = W^\circ$ (the new vector of $\Pi$, i.e., the unique-up-to-scalar nonzero vector fixed by $K_1(\frp^{c(\Pi)})$) works universally.  The test vector $V$ depends on $\pi$: for ramified $\pi$, one uses the new vector $V^\circ$; for unramified $\pi$, one uses a specially constructed $V_0$ with compact Kirillov-model support.
+\paragraph{The final computation.}
+Combining these, the Rankin--Selberg integral evaluates to:
+\[
+  \ell_{\mathrm{RS}}(s, u_Q W_0, d_Q V)
+  = \eps(\tfrac{1}{2}, \pi, \psi)^{-1}\, |Q|^{n - n/2}\,
+    \vol(K_1(\frq)),
+\]
+which is a \emph{nonzero constant} (independent of $s$).
 
-\subsection{Why This Is Hard}
+\subsection{Why the Solution Is Elegant}
 
-Several features make this problem non-trivial:
+Several features are worth highlighting:
+\begin{itemize}
+\item \textbf{No case splitting:} The argument works uniformly for all $\pi$---unramified,
+  supercuspidal, and non-supercuspidal ramified---because the Godement--Jacquet functional
+  equation is universal.
+\item \textbf{The $s$-independence is immediate:} Since $W_0$ is supported on
+  $\det^{-1}(\fro^\times)$, the translate $t_Q W_0$ is supported on
+  $\det^{-1}(Q\fro^\times)$, so the torus sum collapses to a single determinant value
+  automatically.  This makes $\ell_{\mathrm{RS}}(s)$ a constant times $|Q|^s$, and the
+  homogeneity property (equation (19) in the solution) absorbs this into a constant.
+\item \textbf{Newvector theory does all the work:} The right-hand side of the
+  Godement--Jacquet identity (after applying \eqref{eq:right}) reduces to an integral
+  over $K_1(\frq)$, where $K_1(\frq)$-invariance and the normalization $V(1) = 1$
+  immediately give a computable nonzero answer.
+\item \textbf{The choice of $W_0$ is explicit and canonical:} It is the Whittaker
+  function corresponding to $\mathbf{1}_{K_n}$ in the Kirillov model.  This is
+  \emph{not} the newvector of $\Pi$ (unless $\Pi$ is unramified), contrary to what the
+  \texttt{af} attempt assumed.
+\end{itemize}
+
+
+%======================================================================
+\section{The \texttt{af} Automated Attempt}
+\label{sec:af}
+%======================================================================
+
+\subsection{Answer and Strategy}
+
+The \texttt{af} attempt correctly identified the answer as \textbf{YES} and proposed that
+the essential Whittaker function (newvector) $W^\circ$ of $\Pi$ works universally.  The
+proof was organized as a 17-node tree with the following high-level structure:
+
 \begin{enumerate}
-\item The integral $I(s, W, V)$ is a priori a \emph{rational function} of $q^{-s}$ by JPSS theory \cite{JPSS83}.  Being ``finite and nonzero for all $s \in \C$'' is equivalent to being a nonzero monomial $c \cdot q^{-ks}$ --- a very restrictive condition.
-\item For unramified $\pi$, the standard choice of $V = V^\circ$ (spherical Whittaker function) yields $I(s) \propto L(s, \Pi \times \pi)$, which generically has poles.  A non-standard test vector $V_0$ must be constructed.
-\item The proof splits into three fundamentally different cases (unramified, supercuspidal, non-supercuspidal ramified), each requiring distinct mechanisms.
-\item The ``nonvanishing'' step for $n \geq 2$ requires analysis of matrix-coefficient integrals with partial additive twists, which are substantially more complex than the one-dimensional Gauss sums that appear for $n = 1$.
-\item The non-supercuspidal ramified case requires identifying the twisted integral with a Rankin--Selberg epsilon factor, invoking deep test vector theory that is not fully established for general $\GL_{n+1} \times \GL_n$.
+\item \textbf{Algebraic reduction} (Nodes 1.1, 1.2): Establish the commutation identity
+  $W(\mathrm{diag}(g,1)\, u_Q) = \psi^{-1}(Q g_{nn})\, W(\mathrm{diag}(g,1))$ and the
+  monomial characterization (a rational function in $q^{-s}$ with no zeros or poles on
+  $\C^\times$ is a monomial).
+
+\item \textbf{Three-case strategy:} The choice of test vector $V$ depends on $\pi$:
+  \begin{itemize}
+  \item \emph{Unramified $\pi$:} Construct $V_0$ with compact Kirillov model support
+    $\phi_0 = \mathbf{1}_{(\fro^\times)^{n-1}}$, aiming to collapse the torus sum to a
+    single term.
+  \item \emph{Supercuspidal ramified $\pi$:} Use the newvector $V^\circ$; argue that
+    compact Kirillov support of supercuspidal representations forces the torus sum to
+    collapse.
+  \item \emph{Non-supercuspidal ramified $\pi$:} Use $V^\circ$ and attempt to identify
+    the integral with the Rankin--Selberg epsilon factor $\eps(s, \Pi \times \pi, \psi)$.
+  \end{itemize}
+
+\item \textbf{Iwasawa unfolding} (Node 1.4): For ramified $\pi$, unfold via $g = nak$
+  and exploit $W^\circ$-factorization and conductor analysis to show $J_K(m) = 0$ unless
+  $m_n = 0$.
+
+\item \textbf{Nonvanishing} (Node 1.5): Argue that the surviving terms are nonzero.
+\end{enumerate}
+
+\subsection{Status at Termination}
+
+After three sessions, the proof had:
+\begin{itemize}
+\item 5 validated nodes (1.1, 1.2, 1.4.1, 1.4.2, plus the root by propagation),
+\item 12 pending nodes with 57 open challenges (18 critical, 19 major, 15 minor),
+\item 0 refutations.
+\end{itemize}
+
+The five systematic issues identified were:
+\begin{enumerate}
+\item Kirillov model evaluation for $n \geq 2$ (pointwise evaluation off the mirabolic),
+\item Casselman--Shalika formula scope (unramified $\Pi$ only),
+\item $K$-projection dilemma (unramified case),
+\item Test vector theory for general $\GL_{n+1} \times \GL_n$,
+\item $J_K(0)$ nonvanishing for $n \geq 2$.
 \end{enumerate}
 
 
 %======================================================================
-\section{Proof Strategy}
-\label{sec:strategy}
+\section{Critical Comparison}
+\label{sec:comparison}
 %======================================================================
 
-The proof reduces the problem to showing $I(s, W^\circ, V)$ is a nonzero monomial in $q^{-s}$, then handles three cases.
+\subsection{The Fundamental Strategic Divergence}
 
-\subsection{Step 1: Algebraic Reduction (Nodes 1.1, 1.2)}
+The most important difference between the two approaches is \textbf{structural}: the
+official solution avoids case splitting entirely, while the \texttt{af} attempt committed
+to a three-case strategy that created three independent proof obligations, each of which
+proved intractable.
 
-Two foundational results reduce the problem to concrete computations.
-
-\paragraph{Node 1.1 --- Commutation Identity.}
-For $g \in \GL_n(F)$:
-\[
-  W\bigl(\mathrm{diag}(g,1) \cdot u_Q\bigr) = \psi^{-1}(Q \cdot g_{nn}) \cdot W\bigl(\mathrm{diag}(g,1)\bigr).
-\]
-This follows from conjugating $u_Q$ past $\mathrm{diag}(g,1)$: the resulting unipotent element lies in $N_{n+1}$, and only the $(n, n+1)$-superdiagonal entry contributes to $\psi^{-1}$.  The factor $\psi^{-1}(Q g_{nn})$ is left-$N_n$-invariant, so the integrand remains well-defined on $N_n \backslash \GL_n(F)$.
-
-\textbf{Status:} \textcolor{proved}{VALIDATED.}
-
-\paragraph{Node 1.2 --- Algebraic Characterization.}
-A rational function $R(q^{-s}) \in \C(q^{-s})$ is finite and nonzero for all $s \in \C$ if and only if $R$ is a nonzero monomial $c \cdot q^{-ks}$ for some $c \in \C^\times$ and $k \in \Z$.
-
-\textbf{Status:} \textcolor{proved}{VALIDATED.}
-
-\subsection{Step 2: Test Vector Choice (Node 1.3)}
-
-Set $W = W^\circ$, the essential Whittaker function of $\Pi$ (the new vector, fixed by $K_1(\frp^{c(\Pi)})$).  The choice of $V \in \Wh(\pi, \psi)$ depends on $\pi$:
-
+The official solution achieves this by using the Godement--Jacquet functional equation as
+a \emph{bridge} between the Rankin--Selberg world (where the integral lives) and the
+congruence subgroup world (where the newvector is well-understood).  The key insight is
+that one can choose Schwartz data $(\phi, \beta)$ that simultaneously:
 \begin{itemize}
-\item \textbf{Case 1 --- Ramified} ($c(\pi) \geq 1$): $V = V^\circ$, the new vector of $\pi$.
-\item \textbf{Case 2 --- Unramified} ($c(\pi) = 0$): $V = V_0$, a Whittaker function with compact Kirillov-model support $\phi_0 = \mathbf{1}_{(\fro^\times)^{n-1}}$.  This avoids the $L$-function poles that arise from $V^\circ$.
+\item match the Whittaker function $W_0(g\, t_Q)$ on the Rankin--Selberg side
+  (via identity \eqref{eq:left}), and
+\item reduce to the indicator function $\mathbf{1}_{K_1(\frq)}$ on the dual side
+  (via identity \eqref{eq:right}).
 \end{itemize}
 
-\textbf{Status:} \textcolor{pending}{PENDING}, with 7 open challenges (2 critical).  The main issues are errors in the Kirillov model treatment for $n \geq 2$ (see Section~\ref{sec:issues}).
+The \texttt{af} attempt, by contrast, tried to analyze the Rankin--Selberg integral
+\emph{directly} via the Iwasawa decomposition and Kirillov/Whittaker model support.  This
+``direct analysis'' approach works for $n = 1$ (where it reduces to Gauss sums) but
+becomes increasingly unwieldy for $n \geq 2$ because:
+\begin{itemize}
+\item The torus sum has $n$ indices, and collapsing it to a single term requires
+  controlling the support of both $W^\circ$ and $V$ simultaneously.
+\item The Kirillov model, while powerful for $P_n$-orbits, does not give pointwise
+  evaluation for elements outside the mirabolic subgroup.
+\item Different types of $\pi$ (unramified, supercuspidal, non-supercuspidal ramified)
+  have qualitatively different Kirillov/Whittaker support, necessitating case splits.
+\end{itemize}
 
-\subsection{Step 3: Unramified Case --- Compact Kirillov Support (Nodes 1.3.1, 1.3.2)}
+\subsection{Choice of $W$: Newvector vs.\ Kirillov Extension of $\mathbf{1}_{K_n}$}
 
-For unramified $\pi$ (an unramified principal series), define $V_0$ via the Kirillov model as the Whittaker function corresponding to $\phi_0 = \mathbf{1}_{(\fro^\times)^{n-1}} \in \mathcal{S}(F^{n-1} \setminus \{0\})$.  The argument:
+A second major divergence concerns the choice of $W$ itself:
 
+\begin{center}
+\begin{tabular}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Official solution} & \textbf{\texttt{af} attempt} \\
+\midrule
+$W$ & $W_0$ defined via the Kirillov model extension of $g \mapsto \int_{N_n} \mathbf{1}_{K_n}(xg)\, \psi(x)\, dx$ & $W^\circ$, the newvector (essential Whittaker function) of $\Pi$ \\[4pt]
+Dependence on $\Pi$ & Only through the Kirillov model embedding $\Wh(\pi_n, \psi) \hookrightarrow \Wh(\Pi, \psi^{-1})$ & Through the conductor $c(\Pi)$ and the $K_1(\frp^{c(\Pi)})$-invariance \\[4pt]
+Key property & Supported on $\det^{-1}(\fro^\times)$ when restricted to $G_n$ & $K_1(\frp^{c(\Pi)})$-invariant \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The \texttt{af} choice of $W = W^\circ$ is not \emph{wrong}---both choices produce valid
+Whittaker functions.  However, $W^\circ$ lacks the determinantal support property that
+makes the official argument work: since $W^\circ$ is not necessarily supported on
+$\det^{-1}(\fro^\times)$ when restricted to $G_n$, the torus sum does not automatically
+collapse, and one is forced into the case-by-case analysis that generated all 57
+challenges.
+
+The official choice of $W_0$ is specifically engineered so that its translate $t_Q W_0$ is
+supported on $\det^{-1}(Q\fro^\times)$, which immediately pins the determinant and
+eliminates all but one term in the torus sum.  This is the single most important technical
+idea that the \texttt{af} attempt missed.
+
+\subsection{Choice of $V$: Universal Newvector vs.\ Case-Dependent Construction}
+
+\begin{center}
+\begin{tabular}{@{}lp{5.5cm}p{5.5cm}@{}}
+\toprule
+& \textbf{Official solution} & \textbf{\texttt{af} attempt} \\
+\midrule
+$V$ & Always $d_Q V^\circ$, where $V^\circ$ is the normalized newvector of $\pi$ &
+  $V^\circ$ for ramified $\pi$; a compact-Kirillov-support $V_0$ for unramified $\pi$ \\[4pt]
+Universality & Uniform across all $\pi$ (with the natural $d_Q$-scaling) &
+  Two different constructions depending on $c(\pi)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The official solution's choice of $V = d_Q V^\circ$ is arguably more natural: the
+$d_Q$-twist accounts for the conductor in the same way that the $u_Q$-shift accounts for
+it on the $\Pi$-side.  The \texttt{af} attempt's construction of a special $V_0$ for the
+unramified case was motivated by the need to avoid $L$-function poles in the torus sum---a
+problem that simply does not arise in the official approach because the torus sum is
+already collapsed by the support of $W_0$.
+
+\subsection{Role of the Godement--Jacquet Functional Equation}
+
+The Godement--Jacquet theory plays no role in the \texttt{af} attempt.  This is the
+single biggest missed opportunity.  The official solution uses it as the central engine:
 \begin{enumerate}
-\item Since $c(\pi) = 0$, we have $Q \in \fro^\times$ and the additive twist $\psi^{-1}(Q g_{nn})$ is trivial on $\fro$.
-\item The Kirillov support of $V_0$ forces all torus exponents $m_i = 0$.
-\item The Casselman--Shalika formula for $W^\circ$ on the $\GL_{n+1}$-side forces $m_1 \geq m_2 \geq \cdots \geq m_n \geq 0$.
-\item The intersection of these two constraints collapses the torus sum to the single point $m_1 = \cdots = m_n = 0$.
-\item The integral evaluates to $I(s) = W^\circ(I_{n+1}) \cdot \int_{K_n} V_0(k)\, dk$, which is a nonzero constant.
+\item The functional equation relates $Z(\phi, f, s)$ to $Z(\phi^\wedge, f^\vee, 1-s)$.
+\item With the choice $f = V$ (a Whittaker function, not just a matrix coefficient), and
+  the Schwartz data $(\phi, \beta)$ from Lemma~5, the left side becomes
+  $\eps(\frac{1}{2}, \pi, \psi) \cdot \ell_{\mathrm{RS}}(\frac{n+1}{2}, t_Q W_0, V)$
+  (after unfolding).
+\item The right side becomes $|Q|^n \int_{K_1(\frq)} V(g^{-1})\, dg =
+  |Q|^n \vol(K_1(\frq))$ (by \eqref{eq:right} and newvector properties).
 \end{enumerate}
 
-\textbf{Status:} \textcolor{pending}{PENDING}, with 7 open challenges (3 critical).  See Section~\ref{sec:issues}.
-
-\subsection{Step 4: Ramified Case --- Iwasawa Unfolding (Nodes 1.4, 1.4.1--1.4.4)}
-
-For ramified $\pi$ ($c(\pi) \geq 1$), the integral is unfolded via the Iwasawa decomposition $g = nak$:
-
-\paragraph{Node 1.4.1 --- $W^\circ$ Factorization.}
-Since $\mathrm{diag}(k, 1) \in K_1(\frp^{c(\Pi)})$ for all $k \in K_n$, the new vector $W^\circ$ factors out of the $K$-integral:
-\[
-  J(m) = W^\circ\bigl(\mathrm{diag}(a, 1)\bigr) \cdot J_K(m),
-\]
-where $J_K(m) = \int_{K_n} \psi^{-1}(Q \varpi^{m_n} k_{nn}) \, V^\circ(ak) \, dk$ is the reduced $K$-integral.
-
-\textbf{Status:} \textcolor{proved}{VALIDATED.}
-
-\paragraph{Node 1.4.2 --- Case (a) Vanishing ($m_n > c(\pi)$).}
-When $m_n > c(\pi)$, the twist is trivial on $\fro$, and the $K$-integral becomes the $K_n$-average of $V^\circ$.  Since $c(\pi) \geq 1$, the space $\pi^{K_n} = 0$, so $J_K(m) = 0$.
-
-\textbf{Status:} \textcolor{proved}{VALIDATED.}
-
-\paragraph{Node 1.4.3 --- Conductor Analysis ($0 \leq m_n \leq c(\pi)$).}
-The $K$-integral factors through $K_n / K_1(\frq) \cong \GL_n(\fro/\frq)$.  A finite Fourier analysis in the $k_{nn}$-variable shows:
-\begin{itemize}
-\item Case (b): $m_n < 0$, the character oscillates faster than any function on $\fro/\frq$, giving $J_K = 0$.
-\item For $1 \leq m_n \leq c-1$: the $K_1(\frp^{c-m_n})$-average of $V^\circ$ vanishes by minimality of the conductor.
-\item Therefore $J_K(m) = 0$ unless $m_n = 0$.
-\end{itemize}
-
-\textbf{Status:} \textcolor{pending}{PENDING}, with 4 open challenges (1 critical).
-
-\paragraph{Node 1.4.4 --- Torus Sum Reduction.}
-With $m_n = 0$ established, the analysis splits by representation type:
-\begin{itemize}
-\item \textbf{Node 1.4.4.1} (Supercuspidal $\pi$): The compact Kirillov support of $V^\circ$ (since $\pi$ supercuspidal implies $K(\pi, \psi) = \mathcal{S}(F^{n-1} \setminus \{0\})$) intersected with the Whittaker support of $W^\circ$ forces $m_1 = \cdots = m_{n-1} = 0$.  The torus sum collapses to a single term.  \textcolor{pending}{PENDING}, 5 challenges (1 critical).
-\item \textbf{Node 1.4.4.2} (Non-supercuspidal ramified $\pi$): The torus sum is finite via Matringe's explicit formulas, yielding a finite Laurent polynomial.  Monomial property deferred to epsilon factor identification (Node~1.5.2).  \textcolor{pending}{PENDING}, 7 challenges (2 critical).
-\end{itemize}
-
-\subsection{Step 5: Nonvanishing (Node 1.5)}
-
-\paragraph{Node 1.5.1 --- $K$-integral Nonvanishing (Supercuspidal).}
-For supercuspidal $\pi$ at $m = (0, \ldots, 0)$:
-\[
-  J_K(0, \ldots, 0) = \int_{K_n} \psi^{-1}(Q k_{nn}) \, V^\circ(k) \, dk.
-\]
-This factors through $\GL_n(\fro/\frq)$; a fiber decomposition in $k_{nn}$ reduces it to a finite Fourier transform of the fiber sums $\Phi(x) = \sum_{\bar{k}_{nn} = x} V^\circ(\mathrm{lift}(\bar{k}))$.  The claim is that the Fourier coefficient at frequency $Q$ is nonzero because $V^\circ$ has ``maximal Fourier content at the conductor level.''
-
-\textbf{Status:} \textcolor{pending}{PENDING}, with 3 open challenges (1 critical).  The nonvanishing for $n \geq 2$ is the central open gap (see Section~\ref{sec:issues}).
-
-\paragraph{Node 1.5.2 --- Epsilon Factor Identification (Non-supercuspidal).}
-For non-supercuspidal ramified $\pi$, the integral $I(s) = \Psi(s, R(u_Q) W^\circ, V^\circ)$ is identified with the Rankin--Selberg epsilon factor $\varepsilon(s, \Pi \times \pi, \psi)$ (which is always a nonzero monomial) via test vector theory.
-
-\textbf{Status:} \textcolor{pending}{PENDING}, with 5 open challenges (2 critical).  The test vector literature does not fully cover general $\GL_{n+1} \times \GL_n$ (see Section~\ref{sec:issues}).
-
-\subsection{Step 6: Conclusion (Node 1.6)}
-
-Node~1.6 assembles the three cases into a single QED.  \textcolor{pending}{PENDING}, with 8 open challenges (3 critical), all inherited from upstream gaps.
+The \texttt{af} attempt's Node~1.5.2 \emph{gestured} toward using the JPSS functional
+equation to establish the monomial property, but this was framed as an identification
+$I(s) = C \cdot \eps(s, \Pi \times \pi, \psi)$ via test vector theory---a much harder
+claim that requires knowing the precise proportionality constant, which the
+\texttt{af} attempt could not establish.  The official solution sidesteps this entirely
+by working with the Godement--Jacquet functional equation (for $\pi$ alone, not for the
+pair $\Pi \times \pi$), which is a simpler and more classical tool.
 
 
 %======================================================================
-\section{Current Status}
-\label{sec:status}
-%======================================================================
-
-\subsection{Node Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Epistemic State} & \textbf{Count} & \textbf{Meaning} \\
-\midrule
-\textcolor{proved}{Validated} & 5 & Passed adversarial verification \\
-\textcolor{pending}{Pending} & 12 & Awaiting proof or verification \\
-\textcolor{refuted}{Refuted} & 0 & --- \\
-\textcolor{archived}{Archived} & 0 & --- \\
-\midrule
-\textbf{Total} & \textbf{17} & \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\subsection{Challenge Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lcccc@{}}
-\toprule
-\textbf{Node} & \textbf{Critical} & \textbf{Major} & \textbf{Minor} & \textbf{Total Open} \\
-\midrule
-1 (root) & 0 & 0 & 1 & 1 \\
-1.3 (test vectors) & 1 & 2 & 2 & 5 \\
-1.3.1 (unramified construction) & 2 & 1 & 0 & 3 \\
-1.3.2 (unramified monomial) & 2 & 1 & 1 & 4 \\
-1.4 (Iwasawa unfolding) & 0 & 2 & 2 & 4 \\
-1.4.3 (conductor analysis) & 1 & 1 & 1 & 3 \\
-1.4.4 (torus reduction) & 1 & 2 & 1 & 4 \\
-1.4.4.1 (supercuspidal) & 1 & 2 & 1 & 4 \\
-1.4.4.2 (non-supercuspidal) & 2 & 3 & 1 & 6 \\
-1.5 (nonvanishing) & 2 & 1 & 1 & 4 \\
-1.5.1 ($K$-integral) & 1 & 1 & 1 & 3 \\
-1.5.2 (epsilon factors) & 2 & 1 & 2 & 5 \\
-1.6 (conclusion) & 3 & 2 & 1 & 6 \\
-\midrule
-\textbf{Total} & \textbf{18} & \textbf{19} & \textbf{15} & \textbf{57}\footnote{Some challenges are resolved (14 total); the 57 figure counts open challenges only.} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-
-%======================================================================
-\section{Session History}
-\label{sec:sessions}
-%======================================================================
-
-\subsection{Session 1: Initial Proof Tree}
-
-\begin{itemize}
-\item Created the initial 7-node proof tree covering the root conjecture, commutation identity, algebraic characterization, test vector choice, Iwasawa unfolding, nonvanishing, and conclusion.
-\item \textbf{Nodes 1.1 and 1.2 validated} by the adversarial verifier.
-\end{itemize}
-
-\subsection{Session 2: First Verification Wave and Prover Repairs}
-
-\begin{itemize}
-\item \textbf{Verification wave 1:} 14 challenges raised on nodes 1.3, 1.4, 1.5, 1.6.
-\item \textbf{Prover wave:} All 14 challenges resolved; 10 new child nodes created (1.3.1, 1.3.2, 1.4.1--1.4.4.2, 1.5.1, 1.5.2).
-\item The tree expanded from 7 to 17 nodes.
-\item Key refinements: the Kirillov model test vector $V_0$ for unramified $\pi$ was made explicit; the conductor analysis was decomposed into sub-cases; the supercuspidal and non-supercuspidal ramified cases were separated.
-\end{itemize}
-
-\subsection{Session 3: Second Verification Wave (Partial)}
-
-\begin{itemize}
-\item \textbf{Verification wave 2:} 8 of 15 nodes verified.
-\item \textbf{2 newly validated:} Node 1.4.1 ($W^\circ$ factorization) and Node 1.4.2 (Case (a) vanishing).
-\item \textbf{6 newly challenged:} Nodes 1.3.1, 1.3.2, 1.4.3, 1.4.4, 1.5.1, 1.5.2, with 20 new challenges.
-\item \textbf{7 nodes remain unverified:} 1.4.4.1, 1.4.4.2, 1.3, 1.4, 1.5, 1.6, and the root 1.
-\item The session was interrupted before verification wave 2 could be completed.
-\item \textbf{Post-session:} Remaining verifications appear to have been run; the root node now shows as validated, likely via automatic propagation.  However, 57 open challenges remain across 12 pending nodes.
-\end{itemize}
-
-
-%======================================================================
-\section{Systematic Issues and Open Gaps}
+\section{Assessment of the Five Systematic Issues}
 \label{sec:issues}
 %======================================================================
 
-The 57 open challenges are not independent; they cluster around five systematic issues that recur across multiple nodes.
+We now evaluate each of the five systematic issues identified by the \texttt{af} attempt,
+distinguishing between genuine mathematical obstacles and artifacts of the proof strategy.
 
 \subsection{Issue 1: Kirillov Model Evaluation for $n \geq 2$}
-\label{sec:kirillov}
 
-\textbf{Affected nodes:} 1.3.1, 1.3.2, 1.4.4.1.
+\textbf{Verdict: Artifact of the wrong approach.}
 
-\textbf{The problem:} The Kirillov model realizes $\pi|_{P_n}$ on functions on $F^{n-1} \setminus \{0\}$, where $P_n$ is the mirabolic subgroup.  For elements $k \in K_n$ that do \emph{not} lie in $P_n$ (a positive-measure subset), evaluating $V_0(ak)$ requires the full representation action $\pi(k)$, not pointwise evaluation of $\phi_0$.  The proof repeatedly treats $V_0(ak)$ as if the Kirillov model gave pointwise evaluation for arbitrary $k$, which is false.
+The \texttt{af} attempt needed pointwise evaluation of $V_0(ak)$ for $k \in K_n$ not in
+the mirabolic subgroup $P_n$, which the Kirillov model does not provide.  The official
+solution avoids this entirely: $V$ is always the newvector $V^\circ$, which is defined
+globally on $G_n$ (not just on $P_n$), and the Godement--Jacquet approach reduces
+everything to an integral over $K_1(\frq)$ where $V^\circ$ is simply a constant.
 
-\textbf{Specific manifestations:}
-\begin{itemize}
-\item \textbf{ch-fc31ed059f0} (1.3.1, critical): ``Kirillov model does not evaluate pointwise for $k \notin P_n$.''
-\item \textbf{ch-76fbc55cac5} (1.3.2, critical): Same issue in the monomial property argument.
-\item \textbf{ch-f4770ce21d2} (1.4.4.1, critical): The claim that $\phi^\circ$ is supported on a single torus coset uses the same incorrect Kirillov evaluation.
-\end{itemize}
-
-\textbf{Impact:} This invalidates the ``torus support collapse'' argument for both the unramified and supercuspidal cases.  The core mechanism of the proof (that the torus sum collapses to a single point) is built on this foundation.
-
-\textbf{Possible repair:} One could bypass the Kirillov model entirely and work with the Whittaker model directly, or use the Jacquet module filtration to control the torus support.  Alternatively, restrict $V_0$ to the mirabolic subgroup and extend by zero, but this changes the $K$-integral structure.
+However, the underlying mathematical issue---that the Kirillov model is a
+$P_n$-representation, not a $G_n$-representation---is a genuine fact that any proof using
+Kirillov-model support arguments for $G_n$-integrals must contend with.  The
+\texttt{af} attempt correctly identified this as a problem; it simply should not have been
+using the Kirillov model in this way.
 
 \subsection{Issue 2: Casselman--Shalika Formula Scope}
-\label{sec:cs}
 
-\textbf{Affected nodes:} 1.3.1, 1.3.2.
+\textbf{Verdict: Artifact of the wrong approach.}
 
-\textbf{The problem:} The Casselman--Shalika formula gives explicit torus values $W^\circ(\mathrm{diag}(\varpi^{m_1}, \ldots, \varpi^{m_n}, 1))$ only for \emph{unramified} $\Pi$.  For ramified $\Pi$, $W^\circ$ has different torus support described by Matringe's formulas, and the dominance condition $m_1 \geq m_2 \geq \cdots \geq m_n \geq 0$ is not guaranteed.
+The \texttt{af} attempt invoked the Casselman--Shalika formula to control the torus
+support of $W^\circ$ (the newvector of $\Pi$), but this formula applies only when $\Pi$
+is unramified.  The official solution uses $W_0$ (not $W^\circ$), whose torus support is
+controlled not by Casselman--Shalika but by the elementary fact that
+$\mathbf{1}_{K_n}(xg)$ forces $g \in K_n$ (after integrating over $N_n$), giving
+$\det g \in \fro^\times$.
 
-\textbf{Specific manifestations:}
-\begin{itemize}
-\item \textbf{ch-b23b0a145f1} (1.3.1, critical): ``Casselman--Shalika formula invoked for possibly ramified $\Pi$.''
-\item \textbf{ch-9741de17c3d} (1.3.2, major): Same issue.
-\end{itemize}
+\subsection{Issue 3: $K$-Projection Dilemma}
 
-\textbf{Impact:} If $\Pi$ is ramified, the torus support of $W^\circ$ may not be restricted to the dominant cone, and the ``single point'' collapse argument fails.
+\textbf{Verdict: Genuine obstacle for the Iwasawa-unfolding approach, but irrelevant to
+the correct proof.}
 
-\textbf{Possible repair:} The argument should be split into $\Pi$-unramified and $\Pi$-ramified subcases.  For $\Pi$-unramified, Casselman--Shalika applies directly.  For $\Pi$-ramified, Matringe's Theorem~3.1 \cite{Matringe13} gives more general but still constraining support conditions.
+For unramified $\pi$, the $K_n$-average of any Whittaker function is either proportional
+to the spherical vector (reproducing $L$-function poles) or zero.  This is a real
+phenomenon---it reflects the fact that the spherical vector generates the unique
+$K_n$-fixed line in $\pi$.  The \texttt{af} attempt correctly identified this as a
+dilemma for the unramified case.
 
-\subsection{Issue 3: $K$-Projection Dilemma (Unramified Case)}
-\label{sec:kproj}
-
-\textbf{Affected nodes:} 1.3.2.
-
-\textbf{The problem:} For unramified $\pi$, the $K$-average of $V_0$ is either:
-\begin{itemize}
-\item \emph{Nonzero}, in which case it is proportional to the spherical vector $V^\circ$, and the integral reproduces $L(s, \Pi \times \pi)$ which has poles.
-\item \emph{Zero}, in which case the ``nonvanishing'' claim $\int_{K_n} V_0(k)\, dk \neq 0$ fails.
-\end{itemize}
-
-\textbf{Specific manifestation:}
-\begin{itemize}
-\item \textbf{ch-8a091889d3a} (1.3.2, critical): ``$K$-projection dilemma: the $K$-integral of $V_0$ is either zero or gives $L$-function poles.''
-\end{itemize}
-
-\textbf{Impact:} This is a potential fundamental obstruction to the unramified case.
-
-\textbf{Possible repair:} The resolution likely requires carefully distinguishing between the $K$-average of $V_0$ (which projects to the spherical vector in the abstract representation) and the evaluation $\int_{K_n} V_0(k)\, dk$ (which is the value of this $K$-projection at the identity, not the full $L$-function integral).  If the torus sum has genuinely collapsed to a single term, then the $L$-function poles are not reproduced because only the $m = 0$ term survives.  This distinction needs to be made rigorous.
+The official solution resolves this ``dilemma'' implicitly: by using $V = d_Q V^\circ$
+and working through the Godement--Jacquet functional equation rather than through a $K_n$-average, the issue simply does not arise.  The integral over $K_1(\frq)$
+(which equals $K_n$ when $\pi$ is unramified, since $\frq = \fro$) yields
+$\vol(K_n) \cdot V^\circ(1) = 1$---there is no projection dilemma because $V^\circ$
+\emph{is} $K_n$-fixed.
 
 \subsection{Issue 4: Test Vector Theory for General $\GL_{n+1} \times \GL_n$}
-\label{sec:testvector}
 
-\textbf{Affected nodes:} 1.5.2, 1.4.4.2.
+\textbf{Verdict: Genuine gap in the literature, but irrelevant to the correct proof.}
 
-\textbf{The problem:} The proof identifies $I(s)$ with $C \cdot \varepsilon(s, \Pi \times \pi, \psi)$ by appealing to Humphries (2021) and Assing--Blomer (2024).  However:
-\begin{itemize}
-\item Humphries (2021) is $\GL_2$-specific.
-\item Assing--Blomer (2024) does not establish the universal identity for $\GL_{n+1} \times \GL_n$.
-\end{itemize}
+The \texttt{af} attempt tried to identify the Rankin--Selberg integral with
+$C \cdot \eps(s, \Pi \times \pi, \psi)$, invoking Humphries (2021, $\GL_2$-specific) and
+Assing--Blomer (2024, does not cover the general case).  This is indeed an open problem in
+the test vector literature: the precise proportionality constant for new vectors in
+$\GL_{n+1} \times \GL_n$ Rankin--Selberg integrals is not fully established for
+general~$n$.
 
-\textbf{Specific manifestations:}
-\begin{itemize}
-\item \textbf{ch-8de631845db} (1.5.2, critical): ``Test vector identification is unproven for general $n$.''
-\item \textbf{ch-d7e5d54b9bc} (1.4.4.2, critical): ``Monomial property via Steps (A)--(C) is unproven.''
-\end{itemize}
+However, the official solution does not need this.  It computes the integral
+\emph{directly} as $c \cdot |Q|^{-n/2}$ using the Godement--Jacquet bridge, without ever
+identifying it with an epsilon factor of the pair $\Pi \times \pi$.  The epsilon factor of
+$\pi$ alone (not of the pair) appears in the Schwartz function $\beta$, but this is
+elementary (Godement--Jacquet theory for a single representation).
 
-\textbf{Impact:} The entire non-supercuspidal ramified case (Case~3 in the QED node) depends on this identification.
+\subsection{Issue 5: $J_K(0)$ Nonvanishing for $n \geq 2$}
 
-\textbf{Possible repair:} Two directions are available:
-\begin{enumerate}
-\item \textbf{Use $V_{\mathrm{mod}}$ with compact Kirillov support} (as sketched in Node~1.4.4.2's ``alternative direct argument'').  If one can construct a modified test vector whose Kirillov support is small enough to collapse the torus sum to a single term, and whose twisted $K$-integral at $m = 0$ is nonzero, then the monomial property follows without epsilon factor identification.
-\item \textbf{Use the functional equation directly.}  Since $I(s)$ is a finite Laurent polynomial with no poles, and the functional equation relates $I(s)$ to $\widetilde{I}(1-s)$, one can potentially show that $I(s)$ has no zeros either, which by Node~1.2 forces it to be a monomial.
-\end{enumerate}
+\textbf{Verdict: Genuine mathematical question, partially relevant.}
 
-\subsection{Issue 5: $J_K(0, \ldots, 0)$ Nonvanishing for $n \geq 2$}
-\label{sec:jk}
+The \texttt{af} attempt needed to show that
+$\sum_{x \in (\fro/\frq)^\times} \psi^{-1}(Qx)\, \Phi(x) \neq 0$, where $\Phi$ is a
+fiber sum of the newvector over $\GL_n(\fro/\frq)$.  This is related to the nonvanishing
+of certain character sums on finite groups of Lie type, which is a non-trivial question.
 
-\textbf{Affected nodes:} 1.5.1.
+The official solution encounters a related but much simpler nonvanishing: it reduces to
+showing that $\int_{K_1(\frq)} V^\circ(g^{-1})\, dg = \vol(K_1(\frq)) \cdot V^\circ(1)
+= \vol(K_1(\frq)) \neq 0$, which is immediate from the normalization $V^\circ(1) = 1$ and
+$K_1(\frq)$-invariance of $V^\circ$.  The ``hard'' nonvanishing problem that the
+\texttt{af} attempt struggled with is thus an artifact of not having the
+Godement--Jacquet reduction.
 
-\textbf{The problem:} The claim that $\sum_{x \in (\fro/\frq)^\times} \psi^{-1}(Qx) \Phi(x) \neq 0$ (the ``maximal Fourier content at conductor level'') has no rigorous proof for $n \geq 2$.  The analogy with Gauss sums ($n = 1$) does not extend trivially.
-
-\textbf{Specific manifestation:}
-\begin{itemize}
-\item \textbf{ch-3463f8fdc17} (1.5.1, critical): ``Nonvanishing of the Fourier coefficient is asserted without proof for $n \geq 2$.''
-\end{itemize}
-
-\textbf{Impact:} This is required for the supercuspidal case (Case~2).
-
-\textbf{Possible repair:} One could use Bushnell--Kutzko type theory, finite group representation theory on $\GL_n(\mathbb{F}_q)$, or Jacquet--Langlands-type test vector theorems.  Alternatively, for supercuspidal $\pi$, the conductor is related to the depth of $\pi$ (Bushnell--Henniart), and the new vector $V^\circ$ has a specific transformation property under $K_1(\frq)$ that may be exploitable.
-
-
-%======================================================================
-\section{Assessment of Correctness}
-\label{sec:assessment}
-%======================================================================
-
-\subsection{What Is Secure}
+\subsection{Summary Table}
 
 \begin{center}
-\begin{tabular}{@{}llc@{}}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{@{}clcc@{}}
 \toprule
-\textbf{Node} & \textbf{Content} & \textbf{Status} \\
+\textbf{\#} & \textbf{Issue} & \textbf{Genuine?} & \textbf{Relevant to official proof?} \\
 \midrule
-1.1 & Commutation identity & \textcolor{proved}{VALIDATED} \\
-1.2 & Algebraic characterization (monomial iff) & \textcolor{proved}{VALIDATED} \\
-1.4.1 & $W^\circ$ factorization from $K$-integral & \textcolor{proved}{VALIDATED} \\
-1.4.2 & Case (a) vanishing for $m_n > c(\pi)$ & \textcolor{proved}{VALIDATED} \\
+1 & Kirillov model evaluation & Genuine fact & No \\
+2 & Casselman--Shalika scope & Genuine fact & No \\
+3 & $K$-projection dilemma & Genuine for Iwasawa approach & No \\
+4 & Test vector theory for $\GL_{n+1} \times \GL_n$ & Open problem & No \\
+5 & $J_K(0)$ nonvanishing & Non-trivial question & No (trivially resolved) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-These four nodes are clean, self-contained, and have survived adversarial verification.  They form the uncontroversial foundation of the proof.
-
-\subsection{What Is Likely Correct but Challenged}
-
-\begin{itemize}
-\item \textbf{Node 1.4.3} (conductor analysis, $J_K = 0$ for $m_n \neq 0$): The core argument --- finite Fourier analysis in $k_{nn}$ --- is standard.  The critical challenge concerns the $m_n < 0$ case (the $\GL_n(\fro/\frq)$ factorization does not directly apply when the character has conductor strictly containing $\fro$), but this can likely be repaired by working directly with $\fro$-integrals.
-\item \textbf{Node 1.4.4.1} (supercuspidal torus collapse): The general strategy --- intersecting the compact Kirillov support of $V^\circ$ with the Whittaker support of $W^\circ$ --- is sound.  The specific claim about single-coset support needs a more careful argument using Jacquet module vanishing.
-\end{itemize}
-
-\subsection{What Faces Fundamental Obstacles}
-
-\begin{itemize}
-\item \textbf{Nodes 1.3.1, 1.3.2} (unramified case): The Kirillov model evaluation issue (Section~\ref{sec:kirillov}) and the $K$-projection dilemma (Section~\ref{sec:kproj}) are serious.  However, the core idea --- using a test vector with compact support to collapse the torus sum --- is sound; the execution needs to be made rigorous.
-\item \textbf{Nodes 1.5.2, 1.4.4.2} (non-supercuspidal ramified case): The test vector identification with epsilon factors (Section~\ref{sec:testvector}) is the most speculative part of the proof.  The ``alternative direct argument'' via compact $V_{\mathrm{mod}}$ may offer a path forward.
-\end{itemize}
-
-\subsection{Overall Assessment}
-
-\begin{center}
-\begin{tabular}{@{}lp{9cm}@{}}
-\toprule
-\textbf{Confidence Level} & \textbf{Assessment} \\
-\midrule
-Answer (YES) & \textbf{Very high.}  Nelson posed this as a problem likely to have an affirmative answer; the essential Whittaker function is the natural candidate. \\[4pt]
-Algebraic foundation (1.1, 1.2) & \textbf{High.}  Validated, clean, uncontroversial. \\[4pt]
-Iwasawa unfolding (1.4.1, 1.4.2) & \textbf{High.}  Validated; the factorization and Case (a) vanishing are standard arguments. \\[4pt]
-Conductor analysis (1.4.3) & \textbf{Medium--High.}  The strategy is standard; execution details need repair. \\[4pt]
-Unramified case (1.3.1, 1.3.2) & \textbf{Medium.}  The compact Kirillov support idea is sound, but the Kirillov model evaluation for $n \geq 2$ and the $K$-projection dilemma need careful resolution. \\[4pt]
-Supercuspidal case (1.4.4.1, 1.5.1) & \textbf{Medium.}  Torus collapse likely correct; $J_K(0) \neq 0$ is the main gap. \\[4pt]
-Non-supercuspidal case (1.4.4.2, 1.5.2) & \textbf{Low--Medium.}  Depends on either test vector theory (not yet established for general $n$) or the alternative $V_{\mathrm{mod}}$ construction (not yet carried out). \\
-\bottomrule
-\end{tabular}
-\end{center}
+All five issues are real mathematical phenomena, but \emph{none} of them are relevant to
+the official proof.  They are all artifacts of the \texttt{af} attempt's strategic choice
+to analyze the Rankin--Selberg integral directly via Iwasawa unfolding and Kirillov model
+support, rather than using the Godement--Jacquet functional equation as a bridge.
 
 
 %======================================================================
-\section{Prospects for a Successful Proof}
-\label{sec:prospects}
+\section{What the \texttt{af} Attempt Got Right}
+\label{sec:right}
 %======================================================================
 
-Despite the 57 open challenges, the overall proof architecture is sound.  The fundamental insight --- that the essential Whittaker function $W^\circ$ works universally, with case-specific choices of $V$ --- is correct.  The challenges primarily concern the \emph{execution} of the argument for $n \geq 2$, not the strategy.
-
-\subsection{Most Promising Repair Strategies}
-
-\subsubsection{Strategy A: Compact Kirillov Support (Bypassing Pointwise Evaluation)}
-
-The Kirillov model issues (Section~\ref{sec:kirillov}) arise from treating $V_0(ak)$ as a pointwise evaluation.  A cleaner approach:
+Despite the strategic divergence, the \texttt{af} attempt produced several correct and
+valuable contributions:
 
 \begin{enumerate}
-\item Work entirely in the Whittaker model.  Define $V_0$ not via the Kirillov isomorphism, but directly as the ``projection'' of a suitable $K_n$-finite vector onto the compact support locus.
-\item Use the Bernstein--Zelevinsky filtration of $\pi|_{P_n}$ (the exact sequence $0 \to \mathcal{S}(F^{n-1} \setminus \{0\}) \to \pi|_{P_n} \to r_P(\pi) \to 0$) to control the torus support of $V_0$ without needing pointwise Kirillov evaluation.
-\item For unramified $\pi$ (where $r_P(\pi) \neq 0$), use the surjectivity of $\pi|_{P_n} \to r_P(\pi)$ to choose $V_0$ whose image in $r_P(\pi)$ vanishes, ensuring $V_0$ comes from $\mathcal{S}(F^{n-1} \setminus \{0\})$ and has compact support.
-\end{enumerate}
+\item \textbf{Correct answer (YES):} The \texttt{af} attempt correctly identified that
+  the answer is affirmative, which is non-trivial---the authors' commentary notes that
+  some LLM attempts constructed $W$ depending on $\pi$, solving a weaker problem.  The
+  \texttt{af} attempt understood the universality requirement from the start.
 
-This avoids the Kirillov evaluation issue entirely.
+\item \textbf{Node 1.1 (Commutation identity):} The identity
+  $W(\mathrm{diag}(g,1)\, u_Q) = \psi^{-1}(Q g_{nn})\, W(\mathrm{diag}(g,1))$ is
+  correct, useful, and appears implicitly in the official solution (in the computation
+  $W_0(gt_Q) = \psi(-g_{nn}) W_0(g d_Q^{-1})$, equation (12)).
 
-\subsubsection{Strategy B: GL$_1$ Reduction via Multiplicativity}
+\item \textbf{Node 1.2 (Monomial characterization):} The fact that a rational function
+  in $q^{-s}$ with no zeros or poles on $\C^\times$ is a monomial is used in both
+  approaches.  The official solution obtains an explicit constant directly, but the
+  underlying algebraic fact is the same.
 
-For the non-supercuspidal ramified case, one can exploit the \emph{multiplicativity} of Rankin--Selberg integrals along the Langlands classification.  If $\pi = \Ind_P^{\GL_n}(\Delta_1 \otimes \cdots \otimes \Delta_r)$, then (informally):
-\[
-  L(s, \Pi \times \pi) = \prod_{i=1}^r L(s, \Pi \times \Delta_i),
-\]
-and similarly for gamma and epsilon factors.  The monomial property of $I(s)$ could be established by reducing to the essentially square-integrable case, and then further to the supercuspidal case via the segment structure of Steinberg representations.  This would replace the test vector identification (Section~\ref{sec:testvector}) with a structural induction.
+\item \textbf{Node 1.4.1 ($W^\circ$ factorization):} The factorization of $W^\circ$ out
+  of the $K$-integral via $K_1(\frp^{c(\Pi)})$-invariance is a valid and standard
+  argument.  While the official solution uses a different $W$ (not $W^\circ$), the
+  factorization principle is the same.
 
-\subsubsection{Strategy C: Direct Functional Equation Argument}
+\item \textbf{Node 1.4.2 (Vanishing for $m_n > c(\pi)$):} The argument that
+  $\pi^{K_n} = 0$ for ramified $\pi$ is correct.  The official solution does not need
+  this step (the torus collapse is automatic), but the underlying representation-theoretic
+  fact is valid.
 
-The following argument avoids test vector theory entirely:
-\begin{enumerate}
-\item $I(s)$ is a Laurent polynomial in $q^{-s}$ (finite torus sum, no denominators).
-\item $I(s)$ satisfies a functional equation relating $I(s)$ to $\widetilde{I}(1-s)$ (JPSS theory).
-\item $I(s) \neq 0$ at $s = 1/2$ (the ``center of symmetry''), provable by evaluating the leading term $W^\circ(I_{n+1}) \cdot J_K(0) \neq 0$.
-\item A Laurent polynomial with no zeros on all of $\C^\times$ (via the surjection $s \mapsto q^{-s}$) is a monomial.
-\end{enumerate}
-Steps 1--2 are established.  Step 3 requires nonvanishing at one point (weaker than full epsilon factor identification).  Step 4 is Node~1.2.
+\item \textbf{Correct identification of difficulty:} The \texttt{af} attempt's systematic
+  issues (Section~\ref{sec:issues}) accurately reflect the genuine obstacles to a
+  ``direct analysis'' proof.  The self-diagnosis was remarkably accurate---the attempt
+  knew where it was stuck and why.
 
-The bottleneck is Step 3, which still requires $J_K(0) \neq 0$ (Issue 5, Section~\ref{sec:jk}).
-
-\subsubsection{Strategy D: Finite Group Representation Theory}
-
-The nonvanishing of $J_K(0)$ (Section~\ref{sec:jk}) can potentially be resolved using the representation theory of $\GL_n(\fro/\frq) \cong \GL_n(\mathbb{F}_q)$ or, for deeper conductors, the groups $\GL_n(\fro/\frp^c)$.  The new vector $V^\circ$, restricted to $K_n$ and viewed as a function on $\GL_n(\fro/\frq)$, lies in a specific representation of this finite group.  The twisted sum $\sum_x \psi^{-1}(Qx) \Phi(x)$ is a character value of this representation, and its nonvanishing can be checked using the character theory of finite groups of Lie type (Deligne--Lusztig theory).
-
-\subsection{Assessment of Repair Difficulty}
-
-\begin{center}
-\begin{tabular}{@{}lp{6cm}c@{}}
-\toprule
-\textbf{Strategy} & \textbf{What It Fixes} & \textbf{Difficulty} \\
-\midrule
-A (Compact Kirillov) & Issues 1, 2, 3 (unramified + supercuspidal) & Medium \\
-B (Multiplicativity) & Issue 4 (non-supercuspidal) & Hard \\
-C (Functional equation) & Issue 4 (non-supercuspidal), partially & Medium \\
-D (Finite groups) & Issue 5 ($J_K(0)$ nonvanishing) & Medium--Hard \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-Strategies A + C + D together would likely suffice for a complete proof, avoiding the deep test vector theory of Strategy~B.
-
-%======================================================================
-\section{Recommended Next Steps}
-\label{sec:next}
-%======================================================================
-
-\begin{enumerate}
-\item \textbf{Priority 1: Repair the Kirillov model argument} (Nodes 1.3.1, 1.3.2).  Use Strategy~A: work in the Whittaker model directly, using the BZ exact sequence to control torus support.  This unblocks the unramified case.
-
-\item \textbf{Priority 2: Prove $J_K(0) \neq 0$ for $n \geq 2$} (Node 1.5.1).  Use Strategy~D: reduce to a character computation on $\GL_n(\fro/\frq)$.  This unblocks the supercuspidal case.
-
-\item \textbf{Priority 3: Handle the non-supercuspidal case} (Nodes 1.4.4.2, 1.5.2).  Use Strategy~C: show $I(s)$ is a nonzero Laurent polynomial with no zeros on $\C^\times$ via the functional equation plus nonvanishing at $s = 1/2$.  If this fails, fall back to Strategy~B (multiplicativity reduction to supercuspidals).
-
-\item \textbf{Priority 4: Finish verification wave 2} (Nodes 1.4.4.1, 1.4.4.2, 1.3, 1.4, 1.5, 1.6, root).  Run adversarial verifiers on all remaining unverified nodes.
-
-\item \textbf{Priority 5: Launch prover wave} for all 57 open challenges.  Address the resolved challenges first (14 already resolved), then tackle the systematic issues.
+\item \textbf{Correct use of references:} The references to JPSS, Matringe, Miyauchi,
+  Casselman--Shalika, and Godement--Jacquet are all appropriate and correctly cited (even
+  if some were applied outside their valid scope).
 \end{enumerate}
 
 
 %======================================================================
-\section{Key References}
-\label{sec:refs}
+\section{What Went Wrong: Root Cause Analysis}
+\label{sec:wrong}
+%======================================================================
+
+\subsection{The Core Error: Missing the Godement--Jacquet Bridge}
+
+The \texttt{af} attempt's fundamental error was not a mathematical mistake but a
+\emph{strategic} one: it tried to analyze the Rankin--Selberg integral directly, without
+using the Godement--Jacquet functional equation as an intermediary.
+
+This is understandable: the Rankin--Selberg integral is defined directly in terms of
+Whittaker functions, and the most natural approach is to unfold it via the Iwasawa
+decomposition and analyze the resulting torus sum.  This is, in fact, the standard
+approach in much of the literature on Rankin--Selberg integrals.  The problem is that this
+approach requires controlling the torus support of both $W$ and $V$ simultaneously, which
+(as the \texttt{af} attempt discovered) is extremely difficult for general $\pi$.
+
+The official solution's insight is that the Godement--Jacquet theory for the
+\emph{smaller} group $G_n$ provides a way to ``dualize'' the integral, replacing the
+Whittaker function $V$ (which has complicated torus support) with the indicator function
+$\mathbf{1}_{K_1(\frq)}$ (which has trivial support properties).  This duality is
+achieved by the identity $\beta^\sharp(\det g)\, \phi^\wedge(g) = |Q|^n\,
+\mathbf{1}_{K_1(\frq)}(g)$, which is the key computation in Lemma~5.
+
+\subsection{The Secondary Error: Wrong Choice of $W$}
+
+The \texttt{af} attempt chose $W = W^\circ$ (the newvector of $\Pi$), while the official
+solution uses $W_0$ (the Kirillov extension of $\mathbf{1}_{K_n}$).  These are different
+functions (unless $\Pi$ is unramified, in which case $W_0$ may coincide with $W^\circ$ up
+to normalization).
+
+The newvector $W^\circ$ is a natural first guess---it is the most canonical element of
+$\Wh(\Pi, \psi^{-1})$---but it does not have the determinantal support property that makes
+the official argument work.  The official choice of $W_0$ is engineered precisely to have
+compact determinantal support ($\det^{-1}(\fro^\times)$ on $G_n$), which collapses the
+torus sum to a single term without any case analysis.
+
+Interestingly, the authors' commentary notes that the best LLM attempt (ChatGPT 5.2 Pro)
+\emph{did} identify a suitable $W$ and reduced to the nonvanishing of
+$\int_{K_n} V(g)\, \psi(-Q g_{nn})\, dg$.  This suggests that the choice of $W$ is the
+easier part; the harder part is the nonvanishing argument, which is where the
+Godement--Jacquet bridge is essential.
+
+\subsection{The Cascade of Complications}
+
+The wrong strategic choices cascaded into increasingly complex proof obligations:
+
+\begin{enumerate}
+\item Wrong $W$ $\Rightarrow$ torus sum does not collapse $\Rightarrow$ need to analyze
+  multi-dimensional torus sums.
+\item Multi-dimensional torus sums $\Rightarrow$ need to control support of both $W^\circ$
+  and $V$ $\Rightarrow$ case splitting by type of $\pi$.
+\item Case splitting $\Rightarrow$ three independent proof branches, each with its own
+  difficulties.
+\item Unramified branch $\Rightarrow$ need Kirillov model for non-mirabolic elements
+  $\Rightarrow$ Issue~1.
+\item Supercuspidal branch $\Rightarrow$ need $J_K(0) \neq 0$ for $n \geq 2$
+  $\Rightarrow$ Issue~5.
+\item Non-supercuspidal branch $\Rightarrow$ need test vector theory for general $n$
+  $\Rightarrow$ Issue~4.
+\end{enumerate}
+
+Each issue, in turn, generated multiple challenges in the adversarial framework, leading to
+the 57 open challenges.
+
+
+%======================================================================
+\section{Lessons Learned}
+\label{sec:lessons}
+%======================================================================
+
+\subsection{For Automated Theorem Proving}
+
+\begin{enumerate}
+\item \textbf{Strategy selection matters more than local correctness.}
+  The \texttt{af} attempt produced many locally correct arguments (5 validated nodes), but
+  the global strategy was suboptimal.  An automated prover that can search over proof
+  strategies---not just refine a fixed strategy---would have been far more effective.
+
+\item \textbf{Functional equations are not just for computing $L$-values.}
+  The Godement--Jacquet functional equation is usually presented as a tool for establishing
+  analytic properties of $L$-functions.  The official solution uses it as a \emph{duality
+  transform}---a way to move from the Whittaker model (complicated) to the congruence
+  subgroup (simple).  Automated provers should be trained to recognize functional equations
+  as potential ``simplification bridges,'' not just as identities to be verified.
+
+\item \textbf{Case splitting is a warning sign.}
+  When a proof of a universal statement ($\forall \pi$) requires case splitting by the
+  type of $\pi$, this often indicates that the proof is not using the right level of
+  abstraction.  The official solution's universality (no case splitting) is a hallmark of
+  the ``right'' proof.
+
+\item \textbf{The adversarial framework correctly identified failure modes.}
+  The 5 systematic issues were accurate diagnoses of why the proof was stuck.
+  The \texttt{af} framework's strength is in \emph{verification} (catching errors) rather
+  than \emph{synthesis} (finding the right approach).  This suggests a complementary
+  architecture: use a creative ``strategy search'' module to propose proof outlines, and
+  use the adversarial framework to verify them.
+
+\item \textbf{Beware of ``natural'' choices.}
+  The newvector $W^\circ$ is the most natural element of $\Wh(\Pi, \psi^{-1})$, and it was
+  the \texttt{af} attempt's first (and only) choice.  The official solution's $W_0$ is
+  less obvious but more effective.  Automated provers should be encouraged to explore
+  multiple candidate constructions before committing to a proof strategy.
+\end{enumerate}
+
+\subsection{For the Representation Theory of $p$-Adic Groups}
+
+\begin{enumerate}
+\item \textbf{The Godement--Jacquet theory for a single group is underappreciated as a
+  tool for Rankin--Selberg problems.}  The standard approach to Rankin--Selberg integrals
+  uses the JPSS theory (zeta integrals for the \emph{pair} $\Pi \times \pi$).  The
+  official solution instead uses the Godement--Jacquet theory for $\pi$ alone, combined
+  with a clever choice of Schwartz data.  This is a genuinely novel technique.
+
+\item \textbf{Determinantal support is a powerful tool.}  The collapse of the torus sum in
+  the official solution comes from the fact that $W_0$ (restricted to $G_n$) is supported
+  on $\det^{-1}(\fro^\times)$.  This is a much simpler condition than the detailed torus
+  support analysis (Casselman--Shalika, Matringe formulas) that the \texttt{af} attempt
+  attempted.
+
+\item \textbf{The test vector problem for $\GL_{n+1} \times \GL_n$ remains open for
+  general $n$.}  The \texttt{af} attempt's Issue~4 is a real gap in the literature.  The
+  official solution circumvents it, but does not solve it.
+\end{enumerate}
+
+\subsection{Comparison with the Authors' Commentary on LLM Attempts}
+
+The authors' commentary identifies three failure modes in LLM-generated solutions:
+\begin{enumerate}[label=(\alph*)]
+\item Constructing $W$ depending on $\pi$ (solving a weaker problem).
+\item Choosing $V$ so the integrand is constant on its support (unviable due to central
+  characters).
+\item Asserting false support properties of $V$ via a ``standard Howe-vector existence
+  result'' (contradicts central character).
+\end{enumerate}
+
+The \texttt{af} attempt avoided failure mode (a)---it correctly understood the
+universality requirement.  It partially fell into failure mode (c) via the Kirillov model
+evaluation issue (treating $V_0$ as having simpler support than it actually does).  It did
+not exhibit failure mode (b).  Overall, the \texttt{af} attempt was more sophisticated
+than the typical LLM attempt described in the commentary, but still failed to find the
+correct proof strategy.
+
+
+%======================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%======================================================================
+
+The comparison between the official solution and the \texttt{af} attempt illustrates a
+fundamental challenge in automated theorem proving for research mathematics: \emph{finding
+the right proof strategy is often harder than executing it}.
+
+The official solution is elegant precisely because it reduces a difficult
+representation-theoretic problem to a routine computation via a single well-chosen
+duality transform (the Godement--Jacquet functional equation).  The \texttt{af} attempt,
+lacking this key insight, was forced into an increasingly complex case analysis that
+generated genuine mathematical difficulties---all of which dissolve when the right
+approach is used.
+
+The \texttt{af} attempt's strengths---correct answer identification, accurate error
+diagnosis, rigorous local verification---are valuable but insufficient without the
+strategic insight that makes the proof work.  Future automated provers would benefit from
+a ``strategy search'' capability that explores multiple high-level proof outlines before
+committing to detailed verification.
+
+
+%======================================================================
+% References
 %======================================================================
 
 \begin{thebibliography}{99}
@@ -556,40 +698,37 @@ H.~Jacquet, I.~I.~Piatetski-Shapiro, and J.~A.~Shalika,
 \emph{Rankin--Selberg convolutions},
 Amer.\ J.\ Math.\ \textbf{105} (1983), 367--464.
 
+\bibitem{GJ72}
+R.~Godement and H.~Jacquet,
+\emph{Zeta Functions of Simple Algebras},
+Lecture Notes in Mathematics \textbf{260}, Springer, 1972.
+
 \bibitem{Matringe13}
 N.~Matringe,
 \emph{Essential Whittaker functions for $\GL(n)$},
 Doc.\ Math.\ \textbf{18} (2013), 1191--1214.
 
-\bibitem{Miyauchi14}
-M.~Miyauchi,
-\emph{Whittaker functions associated to newforms for $\GL(n)$ over $p$-adic fields},
-J.\ Math.\ Soc.\ Japan \textbf{66} (2014), 17--24.
+\bibitem{JPSS81}
+H.~Jacquet, I.~I.~Piatetski-Shapiro, and J.~A.~Shalika,
+\emph{Conducteur des repr\'esentations du groupe lin\'eaire},
+Math.\ Ann.\ \textbf{256} (1981), 199--214.
 
 \bibitem{CS80}
 W.~Casselman and J.~Shalika,
 \emph{The unramified principal series of $p$-adic groups II: The Whittaker function},
 Compositio Math.\ \textbf{41} (1980), 207--231.
 
-\bibitem{BZ76}
-I.~N.~Bernstein and A.~V.~Zelevinsky,
-\emph{Representations of the group $\GL(n, F)$, where $F$ is a local non-archimedean field},
-Uspekhi Mat.\ Nauk \textbf{31} (1976), 5--70.
+\bibitem{Bernstein84}
+J.~N.~Bernstein,
+\emph{$P$-invariant distributions on $\GL(N)$ and the classification of unitary
+representations of $\GL(N)$ (non-Archimedean case)},
+in \emph{Lie Group Representations, II}, Lecture Notes in Math.\ \textbf{1041},
+Springer, 1984, 50--102.
 
-\bibitem{CPS04}
-J.~W.~Cogdell and I.~I.~Piatetski-Shapiro,
-\emph{Remarks on Rankin--Selberg convolutions},
-in \emph{Contributions to Automorphic Forms, Geometry, and Number Theory} (Shalikafest), 2004.
-
-\bibitem{GJ72}
-R.~Godement and H.~Jacquet,
-\emph{Zeta Functions of Simple Algebras},
-Lecture Notes in Mathematics \textbf{260}, Springer, 1972.
-
-\bibitem{Shahidi84}
-F.~Shahidi,
-\emph{Fourier transforms of intertwining operators and Plancherel measures for $\GL(n)$},
-Amer.\ J.\ Math.\ \textbf{106} (1984), 67--111.
+\bibitem{BKL20}
+A.~R.~Booker, M.~Krishnamurthy, and M.~Lee,
+\emph{Test vectors for Rankin--Selberg $L$-functions},
+J.\ Number Theory \textbf{209} (2020), 37--48.
 
 \bibitem{Humphries21}
 P.~Humphries,
@@ -601,388 +740,13 @@ E.~Assing and V.~Blomer,
 \emph{The density conjecture for principal congruence subgroups},
 Duke Math.\ J.\ \textbf{173} (2024), 1949--2008.
 
-\bibitem{Tate50}
-J.~T.~Tate,
-\emph{Fourier Analysis in Number Fields and Hecke's Zeta-Functions},
-PhD thesis, Princeton University, 1950.
-
-\bibitem{BK93}
-C.~J.~Bushnell and P.~C.~Kutzko,
-\emph{The Admissible Dual of $\GL(N)$ via Compact Open Subgroups},
-Annals of Mathematics Studies \textbf{129}, Princeton University Press, 1993.
+\bibitem{Nelson26}
+P.~D.~Nelson,
+Problem~2 in \emph{First Proof: Solutions and Comments},
+Abouzaid, Blumberg, Hairer, Kileel, Kolda, Nelson, Spielman, Srivastava, Ward,
+Weinberger, Williams, February 2026.
 
 \end{thebibliography}
-
-
-\newpage
-%======================================================================
-\appendix
-\section{Full Proof Tree}
-\label{app:tree}
-%======================================================================
-
-The complete proof tree as exported from the adversarial proof framework (\texttt{af status}).
-Status key: \textcolor{proved}{\textbf{V}}~=~validated,
-\textcolor{pending}{\textbf{P}}~=~pending.
-Challenge counts in parentheses: (critical/major/minor).
-
-{\small\begin{verbatim}
-1 [V] Root conjecture: For any generic irred. adm. Pi of GL_{n+1}(F),
-  |  there exists W in W(Pi, psi^{-1}) such that for every generic
-  |  irred. adm. pi of GL_n(F), there exists V in W(pi, psi) for which
-  |  the local RS integral is finite and nonzero for all s in C.
-  |  Challenges: (0/0/1)
-  |
-  +-- 1.1 [V] Commutation Identity
-  |   W(diag(g,1) u_Q) = psi^{-1}(Q g_{nn}) W(diag(g,1))
-  |   Clean, no challenges.
-  |
-  +-- 1.2 [V] Algebraic Characterization
-  |   R(q^{-s}) finite & nonzero for all s iff R = c q^{-ks}
-  |   Clean, no challenges.
-  |
-  +-- 1.3 [P] Test Vector Choice (0/0/1 + upstream)
-  |   W = W^circ (new vector of Pi). V depends on pi:
-  |   Case 1 (ramified): V = V^circ (new vector of pi)
-  |   Case 2 (unramified): V = V_0 (compact Kirillov support)
-  |   Challenges: (1/2/2)
-  |   |
-  |   +-- 1.3.1 [P] Unramified Test Vector Construction
-  |   |   phi_0 = char((o^x)^{n-1}), V_0 = corresponding Whittaker fn
-  |   |   Properties: torus collapse, membership, K-integral nonvanishing
-  |   |   Challenges: (2/1/0)
-  |   |   CRITICAL: Kirillov eval off mirabolic; Casselman-Shalika scope
-  |   |
-  |   +-- 1.3.2 [P] Monomial Property for Unramified pi
-  |       Iwasawa decomp + Kirillov support => single torus term
-  |       I(s) = W^circ(I) * vol = nonzero constant
-  |       Challenges: (2/1/1)
-  |       CRITICAL: K-projection dilemma; Kirillov eval
-  |
-  +-- 1.4 [P] Iwasawa Unfolding (Ramified Case, c(pi) >= 1)
-  |   Unfold via g = nak; W^circ factors out; conductor analysis on m_n
-  |   Challenges: (0/2/2)
-  |   |
-  |   +-- 1.4.1 [V] W^circ Factorization
-  |   |   diag(k,1) in K_1(p^{c(Pi)}) => W^circ(diag(ak,1))=W^circ(diag(a,1))
-  |   |   Validated, no open challenges.
-  |   |
-  |   +-- 1.4.2 [V] Case (a) Vanishing (m_n > c(pi))
-  |   |   Twist trivial => K-average of V^circ = 0 (pi^{K_n} = 0)
-  |   |   Validated, no open challenges.
-  |   |
-  |   +-- 1.4.3 [P] Conductor Analysis (0 <= m_n <= c(pi))
-  |   |   Finite Fourier analysis in k_{nn} over GL_n(o/q)
-  |   |   Case (b): m_n < 0 => character oscillates => J_K = 0
-  |   |   1 <= m_n <= c-1 => K_1(p^{c-m_n})-average vanishes => J_K = 0
-  |   |   Result: J_K(m) = 0 unless m_n = 0
-  |   |   Challenges: (1/1/1)
-  |   |   CRITICAL: GL_n(o/q) factorization invalid for m_n < 0
-  |   |
-  |   +-- 1.4.4 [P] Torus Sum Reduction (m_n = 0 established)
-  |       I(s) = sum over m_1,...,m_{n-1}
-  |       Controlled by W^circ and V^circ torus support
-  |       Challenges: (1/2/1)
-  |       |
-  |       +-- 1.4.4.1 [P] Supercuspidal pi: Single Torus Term
-  |       |   Compact Kirillov support (K(pi,psi) = S(F^{n-1}\{0}))
-  |       |   intersected with W^circ dominance => m_i = 0 for all i
-  |       |   I(s) = W^circ(I) * J_K(0) = nonzero constant
-  |       |   Challenges: (1/2/1)
-  |       |   CRITICAL: phi^circ single-coset claim unproven
-  |       |
-  |       +-- 1.4.4.2 [P] Non-supercuspidal Ramified pi
-  |           Langlands classification: pi = Ind(Delta_1 x...x Delta_r)
-  |           Matringe formulas => finite torus sum => Laurent poly
-  |           Monomial via epsilon factor identification OR V_mod
-  |           Challenges: (2/3/1)
-  |           CRITICAL: Monomial property unproven; V_mod deferred
-  |
-  +-- 1.5 [P] Nonvanishing (Ramified Case)
-  |   Case A (supercuspidal): single-term => need J_K(0) != 0
-  |   Case B (non-supercuspidal): I(s) = C * epsilon(s, Pi x pi, psi)
-  |   Challenges: (2/1/1)
-  |   |
-  |   +-- 1.5.1 [P] K-integral Nonvanishing (Supercuspidal)
-  |   |   J_K(0) = vol(K_1(q)) * sum psi^{-1}(Qx) Phi(x)
-  |   |   Claim: Fourier coeff at conductor level is nonzero
-  |   |   Challenges: (1/1/1)
-  |   |   CRITICAL: Nonvanishing unproven for n >= 2
-  |   |
-  |   +-- 1.5.2 [P] Epsilon Factor Identification (Non-supercuspidal)
-  |       I(s) = C * epsilon(s, Pi x pi, psi) via test vector theory
-  |       epsilon is always a nonzero monomial (JPSS 1983)
-  |       Challenges: (2/1/2)
-  |       CRITICAL: Humphries GL_2-specific; general n unproven
-  |
-  +-- 1.6 [P] Conclusion (QED)
-      Assembles Cases 1 (unramified), 2 (supercuspidal), 3 (non-supercusp.)
-      W = W^circ universal; V case-dependent
-      Challenges: (3/2/1)
-      CRITICAL: Inherits all upstream gaps
-\end{verbatim}}
-
-
-\newpage
-%======================================================================
-\section{Full Node Statements}
-\label{app:nodes}
-%======================================================================
-
-This appendix reproduces the complete statement of each node in the proof tree, as stored in the \texttt{af} workspace.
-
-\subsection*{Node 1 --- Root Conjecture}
-\textbf{Status:} \textcolor{proved}{Validated} / Clean.
-\textbf{Type:} claim.
-
-\noindent\textbf{Statement:}
-For any generic irreducible admissible representation $\Pi$ of $\GL_{n+1}(F)$ over a non-archimedean local field~$F$, there exists $W \in \Wh(\Pi, \psi^{-1})$ such that for every generic irreducible admissible representation $\pi$ of $\GL_n(F)$, there exists $V \in \Wh(\pi, \psi)$ for which
-\[
-  \int_{N_n \backslash \GL_n(F)} W\bigl(\mathrm{diag}(g,1) \cdot u_Q\bigr)\, V(g)\, |\det g|^{s-1/2}\, dg
-\]
-is finite and nonzero for all $s \in \C$.
-
-\subsection*{Node 1.1 --- Commutation Identity}
-\textbf{Status:} \textcolor{proved}{Validated} / Clean.
-
-\noindent\textbf{Statement:}
-For $g \in \GL_n(F)$, $W(\mathrm{diag}(g,1)\, u_Q) = \psi^{-1}(Q\, g_{nn})\, W(\mathrm{diag}(g,1))$.  This follows from conjugating $u_Q = I_{n+1} + Q\, E_{n,n+1}$ past $\mathrm{diag}(g,1)$: the resulting element $n'(g,Q) \in N_{n+1}$, and only the $(n,n+1)$-superdiagonal entry contributes to $\psi^{-1}$.
-
-\subsection*{Node 1.2 --- Algebraic Characterization}
-\textbf{Status:} \textcolor{proved}{Validated} / Clean.
-
-\noindent\textbf{Statement:}
-A rational function $R(q^{-s}) \in \C(q^{-s})$ is finite and nonzero for all $s \in \C$ if and only if $R$ is a nonzero monomial $c\, q^{-ks}$ for some $c \in \C^\times$ and $k \in \Z$.  Proof: the map $s \mapsto q^{-s}$ surjects onto $\C^\times$, and the only rational functions with no zeros or poles on $\C^\times$ are monomials.
-
-\subsection*{Node 1.3 --- Test Vector Choice}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 5 open (1 critical, 2 major, 2 minor).
-
-\noindent\textbf{Statement (summary):}
-Set $W = W^\circ$ (essential Whittaker function of $\Pi$).  For each $\pi$:
-\begin{itemize}
-\item \emph{Ramified} ($c(\pi) \geq 1$): $V = V^\circ$ (new vector of $\pi$).
-\item \emph{Unramified} ($c(\pi) = 0$): $V = V_0$, defined via the Kirillov model with support $\phi_0 = \mathbf{1}_{(\fro^\times)^{n-1}}$.
-\end{itemize}
-For $n = 1$: $V_0(g) = \mathbf{1}_{\fro^\times}(g)$, and the RS integral collapses to $W^\circ(I_2)\, \psi^{-1}(Q) \neq 0$.
-For $n \geq 2$: deferred to Nodes 1.3.1 and 1.3.2.
-
-\subsection*{Node 1.3.1 --- Unramified Test Vector Construction}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 3 open (2 critical, 1 major).
-
-\noindent\textbf{Statement (summary):}
-Defines $\phi_0 = \mathbf{1}_{(\fro^\times)^{n-1}} \in \mathcal{S}(F^{n-1} \setminus \{0\})$ and $V_0$ as the corresponding Whittaker function.  Claims three properties:
-(P1)~Torus support collapse: Casselman--Shalika ($m_i \geq 0$) combined with Kirillov support ($m_i \leq 0$) forces $m_i = 0$.
-(P2)~Membership in $\Wh(\pi, \psi)$ via the Bernstein--Zelevinsky embedding.
-(P3)~Nonvanishing: $\int_{K_n} V_0(k)\, dk > 0$.
-
-\subsection*{Node 1.3.2 --- Monomial Property for Unramified $\pi$}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 4 open (2 critical, 1 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-For unramified $\pi$ with $V = V_0$: the commutation identity gives the twist $\psi^{-1}(Q g_{nn})$, which is trivial since $Q \in \fro^\times$; the Kirillov support forces $m_i = 0$ for all $i$; the integral evaluates to $I(s) = W^\circ(I_{n+1}) \cdot \vol > 0$, a nonzero constant.
-
-\subsection*{Node 1.4 --- Iwasawa Unfolding (Ramified Case)}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 4 open (0 critical, 2 major, 2 minor).
-
-\noindent\textbf{Statement (summary):}
-Unfolds the integral via Iwasawa decomposition $g = nak$.  Four steps: (1)~$W^\circ$ factorization, (2)~$K_1(\frq)$-invariance, (3)~conductor analysis on $m_n$ yielding $J_K(m) = 0$ unless $m_n = 0$, (4)~remaining torus sum in $m_1, \ldots, m_{n-1}$.
-
-\subsection*{Node 1.4.1 --- $W^\circ$ Factorization}
-\textbf{Status:} \textcolor{proved}{Validated} / Unresolved (taint from parent).
-
-\noindent\textbf{Statement:}
-$\mathrm{diag}(k, 1) \in K_1(\frp^{c(\Pi)})$ for all $k \in K_n$, so $W^\circ(\mathrm{diag}(ak, 1)) = W^\circ(\mathrm{diag}(a, 1))$.
-
-\subsection*{Node 1.4.2 --- Case (a) Vanishing}
-\textbf{Status:} \textcolor{proved}{Validated} / Unresolved (taint from parent).
-
-\noindent\textbf{Statement:}
-When $m_n > c(\pi)$, the twist is trivial; $J_K(m) = \int_{K_n} V^\circ(ak)\, dk = 0$ since $\pi^{K_n} = 0$ for $c(\pi) \geq 1$.
-
-\subsection*{Node 1.4.3 --- Conductor Analysis}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 3 open (1 critical, 1 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-Decomposes $\GL_n(\fro/\frq)$ by the $(n,n)$-entry.  The finite Fourier transform in $k_{nn}$ over $\fro/\frq$ vanishes unless the additive level matches the conductor level.  Cases (b)~$m_n < 0$ and $1 \leq m_n \leq c-1$ give $J_K = 0$.  Therefore $J_K(m) = 0$ unless $m_n = 0$.
-
-\subsection*{Node 1.4.4 --- Torus Sum Reduction}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 4 open (1 critical, 2 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-With $m_n = 0$, the sum over $m_1, \ldots, m_{n-1}$ is controlled by the torus support of $W^\circ$ and $V^\circ$.  JPSS rationality, pole analysis, and zero analysis are invoked.  Splits into supercuspidal (1.4.4.1) and non-supercuspidal (1.4.4.2).
-
-\subsection*{Node 1.4.4.1 --- Supercuspidal $\pi$}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 4 open (1 critical, 2 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-For supercuspidal $\pi$: $K(\pi, \psi) = \mathcal{S}(F^{n-1} \setminus \{0\})$; $V^\circ$ has compact Kirillov support.  Combined with $W^\circ$ dominance, the torus sum collapses to $m = 0$.  $I(s) = W^\circ(I_{n+1}) \cdot J_K(0) \neq 0$.
-
-\subsection*{Node 1.4.4.2 --- Non-supercuspidal Ramified $\pi$}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 6 open (2 critical, 3 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-Via Langlands classification and Matringe's explicit formulas, the torus sum is finite.  $I(s)$ is a Laurent polynomial.  Monomial property via epsilon factor identification (primary) or $V_{\mathrm{mod}}$ construction (alternative).
-
-\subsection*{Node 1.5 --- Nonvanishing}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 4 open (2 critical, 1 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-Case A (supercuspidal): $J_K(0) \neq 0$ (Node 1.5.1).  Case B (non-supercuspidal): $I(s) = C \cdot \varepsilon(s, \Pi \times \pi, \psi)$ (Node 1.5.2).
-
-\subsection*{Node 1.5.1 --- $K$-integral Nonvanishing}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 3 open (1 critical, 1 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-$J_K(0) = \vol(K_1(\frq)) \cdot \sum_{x \in (\fro/\frq)^\times} \psi^{-1}(Qx)\, \Phi(x)$.  The Fourier coefficient at conductor level is claimed nonzero because $V^\circ$ has ``maximal Fourier content'' at this level.
-
-\subsection*{Node 1.5.2 --- Epsilon Factor Identification}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Challenges:} 5 open (2 critical, 1 major, 2 minor).
-
-\noindent\textbf{Statement (summary):}
-Identifies $I(s) = C \cdot \varepsilon(s, \Pi \times \pi, \psi)$ via JPSS functional equation and test vector theory (Humphries, Assing--Blomer).  Alternative: $I(s)$ is a Laurent polynomial with no zeros on $\C^\times$, hence a monomial.
-
-\subsection*{Node 1.6 --- Conclusion (QED)}
-\textbf{Status:} \textcolor{pending}{Pending} / Unresolved.
-\textbf{Type:} qed.
-\textbf{Challenges:} 6 open (3 critical, 2 major, 1 minor).
-
-\noindent\textbf{Statement (summary):}
-Assembles three cases:
-\begin{enumerate}
-\item Unramified $\pi$: $V = V_0$, compact Kirillov support $\Rightarrow$ constant monomial.
-\item Supercuspidal ramified $\pi$: $V = V^\circ$, torus collapse $\Rightarrow$ constant monomial.
-\item Non-supercuspidal ramified $\pi$: $V = V^\circ$ (or $V_{\mathrm{mod}}$), epsilon factor identification $\Rightarrow$ monomial.
-\end{enumerate}
-In all cases, $W = W^\circ$ is universal.
-
-
-%======================================================================
-\section{Complete Challenge List}
-\label{app:challenges}
-%======================================================================
-
-The following table lists all 57 open challenges, sorted by node and severity.
-
-{\footnotesize
-\begin{longtable}{@{}p{2.2cm}p{1.1cm}p{1.2cm}p{8cm}@{}}
-\toprule
-\textbf{Challenge ID} & \textbf{Node} & \textbf{Severity} & \textbf{Summary} \\
-\midrule
-\endhead
-ch-fa48e6d4 & 1 & minor & Missing conductor specification \\
-\midrule
-ch-65a665fb & 1.3 & critical & GL$_1$ Kirillov model error for $n=1$ \\
-ch-d5155fdf & 1.3 & major & Kirillov model dimension mismatch \\
-ch-38dd840c & 1.3 & major & $W^\circ$ factorization claim for unramified case \\
-ch-09fcf9a7 & 1.3 & minor & $n=1$ computation includes spurious terms \\
-ch-7d534189 & 1.3 & minor & Missing dependency declarations \\
-\midrule
-ch-fc31ed05 & 1.3.1 & critical & Kirillov model does not evaluate pointwise off mirabolic \\
-ch-b23b0a14 & 1.3.1 & critical & Casselman--Shalika invoked for possibly ramified $\Pi$ \\
-ch-0a34647 & 1.3.1 & major & $K$-integral nonvanishing (P3) uses incorrect Kirillov eval \\
-\midrule
-ch-76fbc55c & 1.3.2 & critical & Kirillov evaluation $V_0(ak)$ invalid off mirabolic \\
-ch-8a091889 & 1.3.2 & critical & $K$-projection dilemma \\
-ch-9741de17 & 1.3.2 & major & Casselman--Shalika scope (unramified $\Pi$ only) \\
-ch-cc673ffe & 1.3.2 & minor & Incoherent $\phi_0$ definition \\
-\midrule
-ch-06e16afe & 1.4 & major & Step 3(b) vanishing for $m_n < 0$ \\
-ch-6c6aeb22 & 1.4 & major & $K_1(\frq)$-invariance claim incomplete \\
-ch-0282f20b & 1.4 & minor & Missing dependency declarations \\
-ch-def647a0 & 1.4 & minor & Step 3(c) references Node 1.4.4 incorrectly \\
-\midrule
-ch-5ae3ea35 & 1.4.3 & critical & $\GL_n(\fro/\frq)$ factorization invalid for $m_n < 0$ \\
-ch-396727e8 & 1.4.3 & major & Case $1 \leq m_n \leq c-1$: unjustified Fourier vanishing \\
-ch-6294364b & 1.4.3 & minor & Inference type and missing dependencies \\
-\midrule
-ch-cb72c2c9 & 1.4.4 & critical & Zero analysis mathematically wrong \\
-ch-6a7dcbea & 1.4.4 & major & Pole analysis non-rigorous \\
-ch-b61c1c23 & 1.4.4 & major & Incoherent argument structure \\
-ch-1ac6ede2 & 1.4.4 & minor & Missing dependency declarations \\
-\midrule
-ch-f4770ce1 & 1.4.4.1 & critical & $\phi^\circ$ single-coset claim unproven \\
-ch-263b8a5f & 1.4.4.1 & major & $K$-integral involves off-torus terms \\
-ch-78d666e9 & 1.4.4.1 & major & $W^\circ$ dominance $m_i \geq 0$ not established for ramified $\Pi$ \\
-ch-8b15b334 & 1.4.4.1 & minor & Single-term nonvanishing deferred \\
-\midrule
-ch-d7e5d54b & 1.4.4.2 & critical & Monomial property via Steps (A)--(C) unproven \\
-ch-ed835d2c & 1.4.4.2 & critical & Alternative argument deferred to child node \\
-ch-34588e04 & 1.4.4.2 & major & Steinberg pattern claim incorrect \\
-ch-8fe1adbc & 1.4.4.2 & major & Matringe Thm 5.1 product formula misquoted \\
-ch-74681215 & 1.4.4.2 & major & Finiteness argument gap \\
-ch-37463a34 & 1.4.4.2 & minor & Missing dependency declarations \\
-\midrule
-ch-ba977748 & 1.5 & critical & Case A delegates to Node 1.5.1 (unproven) \\
-ch-d75f44b4 & 1.5 & critical & Case B: $I(s) = C \cdot \varepsilon$ identification unproven \\
-ch-3368c7e2 & 1.5 & major & Formal dependency declarations still missing \\
-ch-c9014d35 & 1.5 & minor & Imprecise claim about $I(s)$ nonvanishing \\
-\midrule
-ch-3463f8fd & 1.5.1 & critical & Fourier coefficient nonvanishing unproven for $n \geq 2$ \\
-ch-e9fa9101 & 1.5.1 & major & Fiber sum domain restriction unjustified \\
-ch-eb07d1ae & 1.5.1 & minor & Inference type mislabeled \\
-\midrule
-ch-8de63184 & 1.5.2 & critical & Test vector identification unproven for general $n$ \\
-ch-97707406 & 1.5.2 & critical & Fundamental logical error in Step 4 \\
-ch-20cf2e25 & 1.5.2 & major & Step 4 invokes Node 1.5.1 logic (supercuspidal-only) \\
-ch-77ccdb92 & 1.5.2 & minor & Inference type mislabeled \\
-ch-b707611e & 1.5.2 & minor & Missing dependency declarations \\
-\midrule
-ch-310f1a3f & 1.6 & critical & Case 3 (non-supercuspidal) inherits epsilon factor gap \\
-ch-33c5f628 & 1.6 & critical & Case 1 (unramified) inherits Kirillov model gap \\
-ch-7d534189 & 1.6 & critical & Dependencies not formally declared \\
-ch-b92f26f2 & 1.6 & major & Case 2 (supercuspidal) depends on unproven $J_K(0) \neq 0$ \\
-ch-8ee707ba & 1.6 & major & RS conductor formula imprecise \\
-ch-17d96c97 & 1.6 & minor & Ambiguity in $V$ vs $V_{\mathrm{mod}}$ for Case 3 \\
-\bottomrule
-\end{longtable}
-}
-
-
-%======================================================================
-\section{Definitions and External References}
-\label{app:defs}
-%======================================================================
-
-\subsection*{Definitions Registered in \texttt{af}}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Name} & \textbf{Concept} \\
-\midrule
-\texttt{non\_archimedean\_local\_field} & $F$, $\fro$, $\frp$, $q$ \\
-\texttt{generic\_representation} & Generic irreducible admissible rep of $\GL_r(F)$ \\
-\texttt{Whittaker\_model} & $\Wh(\Pi, \psi^{-1})$ \\
-\texttt{conductor\_ideal} & $\frq = \frp^{c(\pi)}$ \\
-\texttt{Rankin\_Selberg\_integral} & $I(s, W, V)$ \\
-\texttt{upper\_triangular\_unipotent} & $N_r \leq \GL_r(F)$ \\
-\bottomrule
-\end{tabular}
-
-\subsection*{External References Registered in \texttt{af}}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Name} & \textbf{Source} \\
-\midrule
-Whittaker models & Cogdell--Piatetski-Shapiro (2004) \\
-Rankin--Selberg theory & JPSS (1983) \\
-Essential Whittaker functions & Matringe (2013) \\
-Newforms for $\GL(n)$ & Miyauchi (2014) \\
-Epsilon factors & Godement--Jacquet (1972) \\
-Tate thesis & Tate (1950) \\
-\bottomrule
-\end{tabular}
 
 
 \end{document}

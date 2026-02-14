@@ -10,18 +10,14 @@
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{longtable}
 \usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{tikz}
-\usetikzlibrary{trees,arrows.meta,positioning}
 
 % --- Theorem environments ---
 \newtheorem{theorem}{Theorem}[section]
 \newtheorem{lemma}[theorem]{Lemma}
 \newtheorem{proposition}[theorem]{Proposition}
 \newtheorem{corollary}[theorem]{Corollary}
-\newtheorem{conjecture}[theorem]{Conjecture}
 \theoremstyle{definition}
 \newtheorem{definition}[theorem]{Definition}
 \newtheorem{remark}[theorem]{Remark}
@@ -29,23 +25,18 @@
 % --- Macros ---
 \newcommand{\R}{\mathbb{R}}
 \newcommand{\Z}{\mathbb{Z}}
-\newcommand{\C}{\mathbb{C}}
 \DeclareMathOperator{\Sp}{Sp}
 \DeclareMathOperator{\LG}{LG}
-\DeclareMathOperator{\supp}{supp}
-\DeclareMathOperator{\Graph}{Graph}
 
-% --- Colors for status ---
+% --- Colors ---
 \definecolor{proved}{RGB}{0,128,0}
 \definecolor{pending}{RGB}{200,150,0}
-\definecolor{refuted}{RGB}{200,0,0}
-\definecolor{archived}{RGB}{128,128,128}
-\definecolor{critical}{RGB}{180,0,0}
 
 % --- Title ---
-\title{\textbf{Report on Problem~8: Lagrangian Smoothing\\of Polyhedral Lagrangian Surfaces}\\[6pt]
-\large Adversarial Proof Framework Analysis}
-\author{Generated from the \texttt{af} proof workspace\\
+\title{\textbf{Critical Comparison: Automated Proof Attempt\\vs.\ Official Solution for Problem~8}\\[6pt]
+\large Lagrangian Smoothing of Polyhedral Lagrangian Surfaces\\[4pt]
+\normalsize First Proof Benchmark}
+\author{Comparative Analysis Report\\
 First Proof Project}
 \date{February 2026}
 
@@ -53,405 +44,433 @@ First Proof Project}
 \maketitle
 
 \begin{abstract}
-This report documents the adversarial proof investigation of Problem~8 from the First Proof paper (posed by Mohammed Abouzaid, Stanford): whether a polyhedral Lagrangian surface $K$ in $(\R^4, \omega_{\mathrm{std}})$ with exactly 4 faces meeting at every vertex necessarily has a Lagrangian smoothing.
-The conjectured answer is \textbf{YES}: $K$ admits a Hamiltonian isotopy $K_t$ of smooth Lagrangian submanifolds for $t \in (0,1]$, extending to a topological isotopy on $[0,1]$ with $K_0 = K$.
-Over seven adversarial sessions, we have constructed a 9-node proof tree with \textbf{2 nodes validated}, 7 pending, no refutations, and only \textbf{6 open challenges} (all minor/note severity on already-validated nodes).
-A total of \textbf{84 challenges have been resolved} across all sessions.
-The proof uses a three-ingredient strategy: cotangent generating functions with a two-zone construction for vertex smoothing, product Lagrangian profile replacement for edge smoothing, and a two-phase sequential Hamiltonian composition for global assembly.
-All construction nodes have had their challenges fully resolved; the proof awaits a fresh verification wave.
+This report critically compares the automated adversarial proof (\texttt{af}) attempt for Problem~8 of the First Proof benchmark with the official correct solution by Mohammed Abouzaid.
+The problem asks whether a polyhedral Lagrangian surface~$K$ in~$(\R^4, \omega_{\mathrm{std}})$ with exactly 4 faces at every vertex necessarily admits a Lagrangian smoothing.
+The answer is \textbf{YES}.
+Over seven sessions, the \texttt{af} system evolved through three distinct strategies---tropical resolution, cotangent generating functions, and a two-zone construction---arriving at a proof attempt with 2 of 9 nodes validated and a self-assessed correctness of 55--65\%.
+Abouzaid's official solution takes a fundamentally different and more elegant approach: it constructs a global \emph{conormal fibration} dual to~$K$, identifies \emph{smoothing functions} as the key analytic objects, and uses contractibility arguments to solve the local-to-global problem.
+We find that the \texttt{af} attempt correctly identified the local smoothing near vertices (essentially the same linear algebra as Abouzaid's Lemma~1), but failed to find the conceptual framework---smoothing functions and conormal fibrations---that makes the global argument tractable.
+This gap is precisely the local-to-global failure mode identified in the authors' commentary on AI solutions.
 \end{abstract}
 
 \tableofcontents
 \newpage
 
 %======================================================================
-\section{Problem Statement}
+\section{The Problem}
 \label{sec:problem}
 %======================================================================
 
-\subsection{Setup}
+We work in~$(\R^4, \omega_{\mathrm{std}})$ with coordinates $(q_1, q_2, p_1, p_2)$ and symplectic form $\omega = dp_1 \wedge dq_1 + dp_2 \wedge dq_2$.
 
-The problem, posed by Mohammed Abouzaid (Stanford), lies in symplectic geometry.
-
-\begin{definition}[Polyhedral Lagrangian surface]
-A \emph{polyhedral Lagrangian surface} $K$ in $(\R^4, \omega_{\mathrm{std}})$ is a finite polyhedral complex, all of whose faces are Lagrangian planes (i.e., 2-planes $\Pi$ with $\omega|_\Pi = 0$), which is a topological submanifold of~$\R^4$.  We assume exactly \textbf{4 faces meet at every vertex}.
+\begin{definition}
+A \emph{polyhedral Lagrangian surface}~$K$ in~$\R^4$ is a finite polyhedral complex all of whose faces are Lagrangian 2-planes, which is a topological submanifold of~$\R^4$.
 \end{definition}
 
-\begin{definition}[Lagrangian smoothing]
-A \emph{Lagrangian smoothing} of $K$ is a Hamiltonian isotopy $K_t$ of smooth Lagrangian submanifolds parametrized by $t \in (0,1]$, extending to a topological isotopy on $[0,1]$ with $K_0 = K$.
+\begin{definition}
+A \emph{Lagrangian smoothing} of~$K$ is a Hamiltonian isotopy~$K^t$ of smooth Lagrangian submanifolds, parametrized by $t \in (0,1]$, extending to a topological isotopy on~$[0,1]$ with $K^0 = K$.
 \end{definition}
 
-\subsection{The Question}
+\begin{proposition}[Abouzaid]
+If $K$ is a polyhedral Lagrangian surface with exactly 4 faces meeting at every vertex, then $K$ has a Lagrangian smoothing.
+\end{proposition}
 
-\begin{conjecture}[Abouzaid]
-\label{conj:main}
-Does $K$ necessarily have a Lagrangian smoothing?
-\end{conjecture}
-
-\noindent\textbf{Conjectured answer: YES} (confidence 70--75\%).
-
-\subsection{Why This Is Hard}
-
-Several features make this problem non-trivial:
-\begin{enumerate}
-\item The smoothing must be \emph{Hamiltonian}, not merely smooth or symplectic.  Hamiltonian isotopies preserve additional structure (the flux class must vanish).
-\item At each vertex, 4 Lagrangian planes meet in $\R^4$.  The local smoothing must produce a smooth Lagrangian disk replacing a singular cone --- a 4-dimensional phenomenon with no 2-dimensional analogue.
-\item \emph{No PL Darboux theorem exists} (Jauberteau--Rollin 2024): one cannot reduce to a local normal form via symplectomorphism as in the smooth case.
-\item The \emph{global assembly} of local smoothings (vertex-by-vertex and edge-by-edge) must produce a \emph{globally} smooth, embedded, Lagrangian surface.  The matching at boundaries of different local patches is the central difficulty.
-\item \emph{Topological obstructions}: compact Lagrangian surfaces in $\R^4$ must have $\chi = 0$ (torus or Klein bottle), and the Shevchishin--Nemirovski theorem forbids smooth Lagrangian Klein bottles in~$\C^2$.
-\end{enumerate}
+The condition of exactly 4 faces per vertex is a combinatorial constraint that restricts the local geometry.  The challenge is that the smoothing must be \emph{Hamiltonian}---not merely smooth or symplectic---and that local smoothings near individual vertices and edges must be assembled into a \emph{globally} smooth, embedded Lagrangian surface.
 
 
 %======================================================================
-\section{Proof Strategy}
-\label{sec:strategy}
+\section{The Official Solution}
+\label{sec:official}
 %======================================================================
 
-The proof proceeds in seven steps, each corresponding to a node in the proof tree.
+Abouzaid's proof proceeds in two main stages: a local analysis near vertices and edges, followed by a global assembly using the notion of a \emph{conormal fibration}.
 
-\subsection{Step 1: Vertex Classification (Node 1.2) --- VALIDATED}
+\subsection{Local Analysis: Vertex Normal Form}
 
-\begin{lemma}[Node 1.2]
-At each vertex $v$ of $K$, the tangent cone $\mathrm{TC}_v(K)$ consists of 4 Lagrangian sectors in 4 distinct planes $\Pi_1, \Pi_2, \Pi_3, \Pi_4$ (cyclically ordered).  Consecutive planes share exactly a line (the edge direction); non-consecutive planes are transverse ($\Pi_1 \cap \Pi_3 = \Pi_2 \cap \Pi_4 = \{0\}$).  All such configurations are $\Sp(4,\R)$-equivalent to a unique normal form:
-\[
-  \Pi_1 = \langle e_1, e_2 \rangle, \quad \Pi_2 = \langle e_1, e_4 \rangle, \quad \Pi_3 = \langle e_3, e_4 \rangle, \quad \Pi_4 = \langle e_2, e_3 \rangle.
-\]
-In particular, ``Type~B'' vertices (opposite sectors coplanar) are impossible for topological submanifolds.
+\begin{lemma}[Abouzaid, Lemma~1]
+\label{lem:vertex-normal-form}
+For each piecewise-linear Lagrangian embedding $\R^2 \to \R^4$ that is linear on the four quadrants with Lagrangian image~$\Sigma$ not contained in a plane, there is a linear symplectic transformation mapping $\Sigma$ to the product of the unions of the positive coordinate axes in the two symplectic factor planes.
 \end{lemma}
 
-\textbf{Status:} \textcolor{proved}{VALIDATED.}  Passed adversarial verification with 11 challenges raised and resolved; 3 minor/note challenges remain open (non-blocking).
+The proof is a short linear algebra argument: the four edge tangent vectors form a symplectic basis for~$\R^4$ (the key point being that the symplectic pairings $\omega(v_i, u_i)$ cannot vanish, or else $\omega$ would vanish on a 3-dimensional subspace).
 
-\subsection{Step 2: Local Vertex Smoothing (Node 1.3)}
+\begin{corollary}[Abouzaid, Corollary~1]
+There exists a linear Lagrangian plane $L \subset \R^4$ such that the symplectic pairing $\R^4 \to L^\vee$ defines a homeomorphism $\Sigma \to L^\vee$.
+\end{corollary}
 
-At each vertex $v$, we construct a smooth Lagrangian disk $L_v$ in $B_\delta(v)$ using \emph{cotangent generating functions} with a \textbf{two-zone design}:
+This is the crucial conceptual step: the singular Lagrangian~$\Sigma$ near a vertex is \emph{homeomorphic to the cotangent fibre}~$L^\vee$ via the symplectic pairing.  This gives~$\Sigma$ a canonical smooth structure.
 
+\subsection{Smoothing Functions}
+
+Rather than constructing explicit smooth Lagrangians by hand, Abouzaid introduces:
+
+\begin{definition}[Abouzaid, Definition~2]
+The space $\mathcal{S}(\Sigma)$ of \emph{smoothing functions} for~$\Sigma$ is the space of $C^1$ functions $f: \Sigma \to \R$ such that $f + q^\Sigma$ is $C^\infty$, where $q^\Sigma$ is the piecewise-quadratic function on~$\Sigma$ whose restriction to each face is the quadratic form arising from the cotangent-bundle description.
+\end{definition}
+
+\begin{lemma}[Abouzaid, Lemma~3]
+The assignment $f \mapsto \Lambda_{df}$ determines a bijection between graphical Lagrangians (with respect to~$L$) and smoothing functions on~$\Sigma$ up to addition of constants.
+\end{lemma}
+
+This is the key local result: smooth Lagrangians near a vertex correspond bijectively to smoothing functions, which are analytically tractable objects.
+
+\subsection{Local Analysis: Edges}
+
+\begin{lemma}[Abouzaid, Lemma~4]
+If $\Sigma$ consists of a pair of linear Lagrangian half-planes meeting along a line~$\ell$, then the space of Lagrangian subspaces~$L$ such that the symplectic pairing $\Sigma \to L^\vee$ is a homeomorphism is \emph{contractible}.
+\end{lemma}
+
+The contractibility of the space of admissible choices near edges is what makes the local-to-global assembly possible.
+
+\subsection{The Global Argument: Conormal Fibrations}
+
+This is the heart of the proof and the part that has no counterpart in the \texttt{af} attempt.
+
+\begin{definition}[Abouzaid, Definition~3]
+A \emph{conormal fibration} dual to~$K$ is a smoothly varying family $\{L_z\}_{z \in K}$ of affine-linear Lagrangian planes, satisfying:
 \begin{enumerate}
-\item Choose a reference Lagrangian plane $\Lambda$ transverse to all 4 face planes, giving cotangent coordinates $(X, Y) \in T^*\R^2$.
-\item Each face plane $\Pi_i$ becomes $\Graph(A_i)$ for a symmetric matrix $A_i$; the PL generating function is $F_{\mathrm{PL}}(X) = \tfrac{1}{2} X^T A_i X$ on sector $\Omega_i$.
-\item \textbf{Inner zone} ($|X| < \varepsilon$): Set $F_{\mathrm{smooth}} = 0$.  Trivially $C^\infty$, with $D^2 F_{\mathrm{smooth}}(0) = 0$ (well-defined zero matrix).
-\item \textbf{Outer zone} ($|X| > 2\varepsilon$): Set $F_{\mathrm{smooth}} = F_{\mathrm{angular}}$, where $F_{\mathrm{angular}} = \sum_i \rho_i(\theta) \cdot \tfrac{1}{2} X^T A_i X$ uses a smooth angular partition of unity.
-\item \textbf{Transition} ($\varepsilon \le |X| \le 2\varepsilon$): $F_{\mathrm{smooth}} = \chi(|X|/\varepsilon) \cdot F_{\mathrm{angular}}$, where $\chi$ is flat at $t=1$.
+\item Near each vertex, $L_z$ consists of translates of a single Lagrangian (from Corollary~1).
+\item $L_z$ varies smoothly along edges.
+\item $L_z$ varies smoothly along faces.
+\item In a collar of each edge, the Lagrangians in the normal direction are translates of those along the edge.
 \end{enumerate}
+\end{definition}
 
-The Hamiltonian isotopy is a \emph{shrinking inner-zone family}: start with $\varepsilon = 0$ (surface $= K$) and expand to $\varepsilon = \delta/8$ (surface $= L_v$, smooth), with a flat reparametrization $\tau(t)$ ensuring smooth extension to $t=0$.
+\begin{lemma}[Abouzaid, Lemma~8]
+$K$ admits a dual conormal fibration which, near each vertex, agrees with the choice given by Corollary~1.
+\end{lemma}
 
-\textbf{Status:} \textcolor{pending}{PENDING.}  Rewritten in Session~5 with the two-zone construction.  All 26 challenges resolved, 0 open.
+The proof uses Lemma~4 (contractibility near edges) to extend the vertex choices to edges, then a standard contractibility argument for the faces.
 
-\subsection{Step 3: Edge Smoothing (Node 1.4) --- VALIDATED}
+With the conormal fibration in hand, Abouzaid defines \emph{global smoothing functions} on~$K$ and proves:
 
-Along each edge $e$, two Lagrangian faces meet in a ``V-shape.''  In edge-adapted Darboux coordinates, \emph{both faces lie in} $\{y_1 = 0\}$.  Replace the V-shaped transverse profile (two rays in the $(x_2, y_2)$-plane) with any smooth curve $\gamma$.  The resulting surface
-\[
-  L_e = \{(x_1, \gamma_1(s), 0, \gamma_2(s)) : x_1 \in \R,\; s \in \R\}
-\]
-is \textbf{automatically Lagrangian}: $\iota^*\omega = dx_1 \wedge d(0) + \gamma_1'(s)\,ds \wedge \gamma_2'(s)\,ds = 0$.
+\begin{lemma}[Abouzaid, Lemma~9]
+There exist smoothing functions for~$K$ of arbitrarily small $C^1$-norm.
+\end{lemma}
 
-The profile is \emph{constant} (independent of $x_1$), so no cross-terms arise.  No Moser correction, Weinstein perturbation, or symplectic error analysis is needed.
+The proof uses a partition of unity indexed by strata of~$K$, composed with dilations, together with the observation that the $C^1$ contribution of the partition's gradient is controlled by the $O(\epsilon^2)$ agreement of local smoothing functions along shared strata.
 
-\textbf{Status:} \textcolor{proved}{VALIDATED.}  11 challenges raised and resolved; 3 minor challenges remain open (non-blocking).
+\subsection{Proof Assembly}
 
-\subsection{Step 4: Global Assembly (Node 1.5)}
+The final proof is short: the conormal fibration gives a neighbourhood~$\nu K$ of~$K$ in~$\R^4$ with a projection $\nu K \to K$.  Global smoothing functions of small $C^1$-norm produce smooth embedded graphical Lagrangians close to~$K$.  A sequence of such Lagrangians, connected by Hamiltonian paths (they are graphs of differentials over each other), concatenates into the desired isotopy.
 
-This is the most complex node.  The strategy:
+\medskip
 
-\begin{enumerate}
-\item \textbf{Direct construction of $L$}: Define $L$ piecewise on overlapping domains, verifying smoothness at every overlap.  Do \emph{not} define $L$ via Hamiltonian flow applied to the non-smooth $K$.
-\item \textbf{Overlapping domain decomposition}: Extended vertex balls $V_i = B_{\delta_i + \eta}(v_i)$ overlap with edge middles $E_k$ by width $\eta$.
-\item \textbf{Overlap matching (key step)}: In the overlap strip, Node~1.3's angular interpolation profile and Node~1.4's constant-profile curve define the \emph{same surface}.  Both faces lie in $\{y_1 = 0\}$ in edge-adapted coordinates; the angular interpolation stays in $\{y_1 = 0\}$; the resulting cross-section is $x_1$-independent.  Choose $\gamma = \gamma_A$ (the vertex construction's cross-section).
-\item \textbf{Lagrangian verification}: Graph of exact 1-form in vertex regions ($\omega = d(dF) = 0$); $ds \wedge ds = 0$ on edge regions; flat planes on face interiors.
-\item \textbf{Hamiltonian isotopy}: Phase~A (vertex Hamiltonians, disjoint supports, simultaneous) then Phase~B (edge Hamiltonians, designed so time-1 map is the identity on $\gamma_1$).  Smooth time reparametrization with flat transition at $t = 1/2$.
-\end{enumerate}
-
-\textbf{Status:} \textcolor{pending}{PENDING.}  Rewritten with the direct construction approach.  All 23 challenges resolved (including 6 critical), 0 open.
-
-\subsection{Step 5: Hamiltonian Isotopy Verification (Node 1.6)}
-
-Verifies that the isotopy $K_t$ from $K$ to $L$ is Hamiltonian.  Each local smoothing is Hamiltonian by construction (generating function families for vertices, constant-profile isotopies for edges).  The global Hamiltonian uses summation (disjoint supports $\Rightarrow$ vanishing Poisson brackets) and smooth bump reparametrization for concatenation ($\rho'(2t) \cdot H_A$ on $[0, 1/2]$, $\rho'(2t-1) \cdot H_B$ on $[1/2, 1]$, both flat at $t = 1/2$).
-
-\textbf{Status:} \textcolor{pending}{PENDING.}  Rewritten in Session~6.  All 10 challenges resolved, 0 open.
-
-\subsection{Step 6: Topological Extension to $t=0$ (Node 1.7)}
-
-The smooth Hamiltonian isotopy $\{K_t\}_{t \in (0,1]}$ extends continuously to $t = 0$ with $K_0 = K$.  Three convergence mechanisms:
-\begin{enumerate}
-\item \textbf{Vertex}: $G_t(X) = \chi(|X|/\varepsilon(t)) \cdot F_{\mathrm{angular}}(X) \to F_{\mathrm{PL}}(X)$ pointwise as $\varepsilon(t) \to 0$.  Hausdorff deviation $O(\varepsilon(t))$.
-\item \textbf{Edge}: Smooth profile $\gamma_t \to \gamma_0$ (V-shape) uniformly.
-\item \textbf{Hamiltonian}: $\|H_t\|_{C^0} \to 0$ as $t \to 0$, so $\|\varphi_t - \mathrm{id}\|_{C^0} \to 0$.
-\end{enumerate}
-
-\textbf{Status:} \textcolor{pending}{PENDING.}  Rewritten in Session~7.  0 open challenges.
-
-\subsection{Step 7: Obstruction Analysis (Node 1.8)}
-
-Verifies that no topological, symplectic, or Floer-theoretic obstruction prevents the smoothing:
+\noindent\textbf{Key features of the official solution:}
 \begin{itemize}
-\item \textbf{Maslov class}: All 4 planes lie in a single cotangent chart $U_\Lambda \cong \R^3$ (contractible), so any vertex loop is null-homotopic: $\mu(v) = 0$.
-\item \textbf{Floer theory}: Irrelevant to smoothing (construction is local, explicit, Floer-agnostic).
-\item \textbf{Topology}: Compact $K$ must be a torus ($\chi = 0$, Klein bottle excluded by Shevchishin--Nemirovski).
-\item \textbf{Monodromy}: Cotangent graph method uses a single reference plane $\Lambda$; no discrete choices.
-\item \textbf{Energy}: $\|H_v\|_{C^0} = O(\delta^2)$ from the two-zone construction.
+\item The proof is \emph{coordinate-free} (after the initial normal form) and works with intrinsic objects (smoothing functions, conormal fibrations).
+\item The local-to-global problem is solved by \emph{contractibility}---the space of admissible choices is contractible, so choices are automatically compatible.
+\item No explicit Hamiltonian vector fields or flow equations are needed.
+\item The proof generalizes to other symplectic manifolds in any dimension.
 \end{itemize}
 
-\textbf{Status:} \textcolor{pending}{PENDING.}  Amended in Session~6.  All 11 challenges resolved, 0 open.
-
 
 %======================================================================
-\section{Current Status}
-\label{sec:status}
+\section{The \texttt{af} Automated Attempt}
+\label{sec:af-attempt}
 %======================================================================
 
-\subsection{Node Statistics}
+\subsection{Overview and Evolution}
+
+The \texttt{af} system worked on this problem over 7 adversarial sessions, evolving through three major strategic phases.  The proof tree had 9 nodes (root + 8 children), of which 2 were validated, 7 remained pending, and 84 challenges were resolved out of 90 total.
+
+\subsection{Session 1--2: Tropical Resolution (Abandoned)}
+
+The initial strategy attempted a hybrid approach combining Polterovich surgery with tropical resolution and Matessi--Mikhalkin pair-of-pants smoothing.  The first verification wave (Session~2) raised 53 challenges and revealed fundamental problems:
+\begin{itemize}
+\item The tropical resolution approach has issues for the 4-face vertex geometry.
+\item The angular partition of unity is not $C^\infty$ at the origin.
+\item The Matessi--Mikhalkin smoothing machinery does not directly apply.
+\end{itemize}
+This approach was abandoned.
+
+\subsection{Sessions 3--4: Cotangent Generating Functions}
+
+After resolving the 53 challenges from Session~2, the \texttt{af} system rewrote the vertex smoothing node (1.3) using \emph{cotangent generating functions}: choose a reference Lagrangian plane~$\Lambda$ transverse to all four face planes, represent each face as the graph of a symmetric matrix~$A_i$ in cotangent coordinates, and construct a smooth generating function by angular interpolation $F(X) = \sum_i \rho_i(\theta) \cdot \tfrac{1}{2} X^T A_i X$.
+
+Session~4's verification wave found a critical flaw: the angular partition of unity at the origin produces a generating function $F(X) = r^2 g(\theta)$ whose smoothness at the origin requires $g(\theta)$ to have only Fourier modes $|n| \le 2$, but generic partitions $\rho_i$ introduce all even modes.  The ``Hessian'' $\sum_i \rho_i(\theta) A_i$ depends on $\theta$ and is not a well-defined bilinear form.  The function $F$ is not $C^2$ at the origin.
+
+\subsection{Sessions 5--7: Two-Zone Construction (Final Strategy)}
+
+The solution to the Fourier mode obstruction was the \textbf{two-zone construction}:
+\begin{enumerate}
+\item \textbf{Inner zone} ($|X| < \varepsilon$): Set $F_{\mathrm{smooth}} = 0$.  Trivially $C^\infty$.
+\item \textbf{Outer zone} ($|X| > 2\varepsilon$): Use angular interpolation $F_{\mathrm{angular}}$.
+\item \textbf{Transition} ($\varepsilon \le |X| \le 2\varepsilon$): Multiply by a flat cutoff $\chi(|X|/\varepsilon)$.
+\end{enumerate}
+The origin is never reached by the angular interpolation, so the Fourier mode obstruction is irrelevant.  The Hamiltonian isotopy is a ``shrinking inner-zone family'' expanding $\varepsilon$ from 0 to $\delta/8$.
+
+For edge smoothing (Node~1.4), the \texttt{af} system found an elegant product construction: in edge-adapted Darboux coordinates, both faces lie in $\{y_1 = 0\}$, so replacing the V-shaped transverse profile with a smooth curve gives an \emph{automatically} Lagrangian surface.
+
+For global assembly (Node~1.5), the strategy used overlapping domains (vertex balls and edge middles), overlap matching via the $\{y_1 = 0\}$ compatibility, and a two-phase Hamiltonian (Phase~A for vertices, Phase~B for edges with identity on $\gamma_1$).
+
+\subsection{Final Status}
 
 \begin{center}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}llcc@{}}
 \toprule
-\textbf{Epistemic State} & \textbf{Count} & \textbf{Meaning} \\
+\textbf{Node} & \textbf{Content} & \textbf{Status} & \textbf{Challenges (open/total)} \\
 \midrule
-\textcolor{proved}{Validated} & 2 & Passed adversarial verification \\
-\textcolor{pending}{Pending} & 7 & Awaiting verification \\
-\textcolor{refuted}{Refuted} & 0 & --- \\
-\textcolor{archived}{Archived} & 0 & --- \\
-\midrule
-\textbf{Total} & \textbf{9} & \\
+1.2 & Vertex classification & \textcolor{proved}{VALIDATED} & 3/11 \\
+1.4 & Edge smoothing & \textcolor{proved}{VALIDATED} & 3/11 \\
+1.1 & Strategy overview & \textcolor{pending}{Pending} & 0/0 \\
+1.3 & Vertex smoothing (two-zone) & \textcolor{pending}{Pending} & 0/26 \\
+1.5 & Global assembly & \textcolor{pending}{Pending} & 0/23 \\
+1.6 & Hamiltonian isotopy & \textcolor{pending}{Pending} & 0/10 \\
+1.7 & Topological extension & \textcolor{pending}{Pending} & 0/0 \\
+1.8 & Obstruction analysis & \textcolor{pending}{Pending} & 0/11 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\subsection{Challenge Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-\textbf{Node} & \textbf{Critical} & \textbf{Major} & \textbf{Minor} & \textbf{Note} & \textbf{Open / Total} \\
-\midrule
-1.2 (vertex model) & 1 & 4 & 2 & 1 & \textbf{3} / 11 \\
-1.3 (vertex smoothing) & 7 & 10 & 5 & 1 & \textbf{0} / 26 \\
-1.4 (edge smoothing) & 1 & 4 & 5 & 0 & \textbf{3} / 11 \\
-1.5 (global assembly) & 6 & 12 & 3 & 0 & \textbf{0} / 23 \\
-1.6 (Hamiltonian isotopy) & 1 & 4 & 3 & 1 & \textbf{0} / 10 \\
-1.7 (topological ext.) & 0 & 0 & 0 & 0 & \textbf{0} / 0 \\
-1.8 (obstructions) & 2 & 5 & 3 & 0 & \textbf{0} / 11 \\
-\midrule
-\textbf{Total} & \textbf{18} & \textbf{39} & \textbf{21} & \textbf{3} & \textbf{6} / \textbf{90}\footnotemark \\
-\bottomrule
-\end{tabular}
-\end{center}
-\footnotetext{The 6 open challenges are all minor/note severity on already-validated nodes (1.2 and 1.4).  All construction nodes have 0 open challenges.}
+Self-assessed confidence: 55--65\% that the proof is correct, 70--75\% that the answer is YES.
 
 
 %======================================================================
-\section{Session History}
-\label{sec:sessions}
+\section{Critical Comparison}
+\label{sec:comparison}
 %======================================================================
 
-\subsection{Session 1: Initial Proof Tree}
+\subsection{Where the Approaches Overlap}
 
-\begin{itemize}
-\item Created the initial 9-node proof tree: root conjecture plus 8 children (vertex classification, vertex smoothing, edge smoothing, global assembly, Hamiltonian isotopy, topological extension, obstruction analysis, and strategy overview).
-\item Initial strategy: hybrid approach combining Polterovich surgery with tropical resolution and Matessi--Mikhalkin pair-of-pants smoothing.
-\end{itemize}
+\paragraph{Vertex normal form (strong overlap).}
+Both the official solution and the \texttt{af} attempt begin with essentially the same linear algebra observation.  Abouzaid's Lemma~1 shows that any 4-face vertex configuration is symplectically equivalent to a standard normal form (product of positive coordinate axes).  The \texttt{af} Node~1.2 proves the same result in different language: all Type~A configurations are $\Sp(4,\R)$-equivalent to a normal form $\Pi_1 = \langle e_1, e_2\rangle$, $\Pi_2 = \langle e_1, e_4\rangle$, $\Pi_3 = \langle e_3, e_4\rangle$, $\Pi_4 = \langle e_2, e_3\rangle$.  The \texttt{af} version is more explicit (specifying coordinates) but contains the same essential content.  The \texttt{af} system additionally proves that ``Type~B'' (opposite sectors coplanar) is impossible for topological submanifolds, which Abouzaid handles implicitly through the assumption that $\Sigma$ is not contained in a plane.
 
-\subsection{Session 2: First Verification Wave}
+\paragraph{Cotangent bundle perspective (partial overlap).}
+Both approaches use the cotangent bundle structure: Abouzaid identifies $\Sigma$ with $L^\vee$ via the symplectic pairing and works with graphs of differentials; the \texttt{af} system works in cotangent coordinates $(X,Y) \in T^*\R^2$ with generating functions.  The mathematical content is closely related---smooth Lagrangians near a vertex correspond to smooth functions---but the conceptual framing differs significantly.  Abouzaid's \emph{smoothing functions} (Definition~2) are defined intrinsically on $\Sigma$ and are invariant under change of polarization (Lemma~2), while the \texttt{af} generating functions are tied to a specific coordinate system.
 
-\begin{itemize}
-\item \textbf{Verification wave 1:} Adversarial verifiers challenged 6 of 8 nodes.
-\item \textbf{53 challenges raised} across nodes 1.1, 1.3, 1.4, 1.5, 1.6, 1.8.
-\item \textbf{Nodes 1.2 and 1.4 accepted} (validated).
-\item Key finding: tropical resolution approach has fundamental issues for the 4-face vertex; angular partition of unity not $C^\infty$ at origin.
-\end{itemize}
+\paragraph{Edge smoothing (moderate overlap).}
+The \texttt{af} Node~1.4 and Abouzaid's Lemma~4 both recognize that the edge geometry is simpler than the vertex geometry.  The \texttt{af} product construction ($L_e = \{(x_1, \gamma(s), 0, \gamma_2(s))\}$) is a concrete version of Abouzaid's observation that $\Sigma$ near an edge splits as a symplectic product of the real axis with a piecewise-linear curve.  However, Abouzaid's Lemma~4 extracts the essential abstract content---\emph{contractibility} of the space of admissible Lagrangian planes---rather than performing an explicit construction.
 
-\subsection{Session 3: First Prover Wave}
+\subsection{Where the Approaches Diverge}
 
-\begin{itemize}
-\item \textbf{All 53 challenges resolved.}  6 nodes rewritten.
-\item Key rewrites: Node~1.3 (cotangent generating functions), Node~1.4 (explicit product Lagrangian, no Moser correction), Node~1.5 (two-phase assembly).
-\end{itemize}
+\paragraph{Smoothing functions vs.\ explicit generating functions.}
+This is the most significant conceptual difference.  Abouzaid defines the space $\mathcal{S}(\Sigma)$ of smoothing functions as an \emph{intrinsic} object on $\Sigma$, independent of the choice of Lagrangian splitting (Lemma~2).  This abstraction is what makes the global argument work: smoothing functions can be manipulated using partitions of unity, and the $C^1$-norm can be controlled using the $O(\epsilon^2)$ first-order agreement of local smoothing functions along shared strata (Lemma~7).
 
-\subsection{Session 4: Second Verification Wave}
+The \texttt{af} system never discovers this concept.  Its generating functions are coordinate-dependent objects, and the smoothing is performed by explicit construction (inner zone $F = 0$, outer zone angular interpolation, cutoff transition).  This approach \emph{works locally} but creates enormous difficulties for the global assembly.
 
-\begin{itemize}
-\item \textbf{Verification wave 2:} 4 of 7 pending nodes verified.
-\item \textbf{37 new challenges} raised on Nodes 1.3, 1.5, 1.6, 1.8.
-\item Critical finding: the angular partition of unity at the origin produces non-$C^2$ generating functions (Fourier mode obstruction).
-\end{itemize}
+\paragraph{Conormal fibration vs.\ Hamiltonian flow composition.}
+This is the decisive divergence.  Abouzaid's conormal fibration $\{L_z\}_{z \in K}$ is a global geometric object that simultaneously parametrizes all the local smoothings.  The key insight is that choosing $L_z$ is an \emph{obstruction-free} problem (the space of choices is contractible at every stage), so the global object always exists (Lemma~8).
 
-\subsection{Session 5: Second Prover Wave (Partial)}
+The \texttt{af} system, by contrast, constructs local smoothings in coordinate patches and then attempts to glue them using a two-phase Hamiltonian composition: Phase~A smooths vertices, Phase~B smooths edges, and the overlap is handled by explicit compatibility arguments ($\{y_1 = 0\}$ compatibility, $x_1$-independence of angular interpolation, Phase~B identity on $\gamma_1$).  This is a \emph{brute-force} approach that works in principle but requires detailed coordinate computations and careful support control.
 
-\begin{itemize}
-\item \textbf{Node 1.3 rewritten} with the \textbf{two-zone construction}: $F_{\mathrm{smooth}} = 0$ for $|X| < \varepsilon$ (trivially $C^\infty$), angular interpolation for $|X| > 2\varepsilon$.  All 10 open challenges on 1.3 resolved.
-\item 26 challenges remained (down from 37).
-\item Nodes 1.5, 1.6, 1.8 still had open challenges.  Nodes 1.1, 1.7 still stale.
-\end{itemize}
+\paragraph{Partition of unity: intrinsic vs.\ extrinsic.}
+Both approaches use partitions of unity, but in fundamentally different ways.  Abouzaid's partition (Lemma~7, Lemma~9) operates on \emph{smoothing functions on $\Sigma$}, which are scalar-valued functions.  The convex combination of smoothing functions is again a smoothing function (by linearity of the smoothing condition), and the $C^1$-norm is controlled by a clean estimate.
 
-\subsection{Session 6: Second Prover Wave (Continued)}
+The \texttt{af} partition of unity operates on \emph{generating functions in ambient coordinates}, and the compatibility at overlaps requires showing that two different coordinate descriptions agree on their overlap.  This is where the \texttt{af} attempt is most vulnerable.
 
-\begin{itemize}
-\item \textbf{Node 1.6 rewritten:} smooth time reparametrization, removed Weinstein correction, updated to reference two-zone construction.  6/6 challenges resolved.
-\item \textbf{Node 1.8 amended:} Maslov index via contractibility, explicit energy bounds, separated embeddedness arguments, Klein bottle scope restriction.  4/4 challenges resolved.
-\item Agents launched for Nodes 1.1, 1.5, 1.7.  17 challenges remained at checkpoint.
-\end{itemize}
+\subsection{Were the Dead Ends Genuine?}
 
-\subsection{Session 7: Prover Wave Complete}
+The \texttt{af} system went through two major dead ends before arriving at the two-zone construction.
 
-\begin{itemize}
-\item \textbf{Node 1.5 rewritten} with the direct construction approach: overlapping domain decomposition, overlap matching via $\{y_1 = 0\}$ compatibility, Phase~B Hamiltonian identity on $\gamma_1$.  \textbf{All 23 challenges resolved} (including 6 critical).
-\item \textbf{Node 1.1 rewritten:} updated strategy overview reflecting current 7-step proof.
-\item \textbf{Node 1.7 rewritten:} topological extension via generating-function convergence.
-\item \textbf{Result: 0 open challenges on any construction node.}  Only 6 minor/note challenges remain on already-validated nodes 1.2 and 1.4.
-\end{itemize}
+\paragraph{Dead End 1: Tropical resolution (Sessions 1--2).}
+This was a genuine dead end.  The tropical-to-Lagrangian correspondence (Matessi, Mikhalkin, Hicks) is a powerful tool for constructing Lagrangians from tropical curves, but it operates in a different regime: it produces Lagrangians from tropical \emph{hypersurfaces}, not from polyhedral complexes with specified vertex conditions.  The \texttt{af} system correctly identified that this machinery does not directly apply.  The official solution makes no reference to tropical geometry.
+
+\paragraph{Dead End 2: Angular partition of unity at the origin (Sessions 3--4).}
+This was a genuine and instructive dead end.  The observation that $F(X) = r^2 g(\theta)$ requires $g$ to have only Fourier modes $|n| \le 2$ for $C^2$-smoothness at the origin is a real analytic obstruction.  The \texttt{af} adversarial process correctly identified this flaw.  Interestingly, Abouzaid's approach \emph{also} confronts this issue but solves it differently: the space of smoothing functions $\mathcal{S}(\Sigma)$ is defined to consist of functions $f$ such that $f + q^\Sigma$ is $C^\infty$, and the existence of such functions with small $C^1$-norm is proved by the dilation argument in Lemma~7.  The \texttt{af}'s two-zone construction (setting $F = 0$ in the inner zone) is a cruder but workable solution to the same underlying problem.
 
 
 %======================================================================
-\section{Key Technical Innovations}
-\label{sec:innovations}
+\section{Evaluation of the Validated Nodes}
+\label{sec:validated}
 %======================================================================
 
-Several non-trivial technical ideas emerged during the adversarial process.
+\subsection{Node 1.2: Vertex Classification}
 
-\subsection{The Two-Zone Construction (Node 1.3)}
-
-The original angular partition of unity approach $F_{\mathrm{old}}(X) = \sum_i \rho_i(\theta) \cdot \tfrac{1}{2} X^T A_i X$ equals $r^2 g(\theta)$.  Smoothness at the origin requires $g$ to have only Fourier modes $|n| \le 2$, but generic $\rho_i$ introduce all even modes.  The ``Hessian'' $\sum_i \rho_i(\theta) A_i$ depends on $\theta$ --- not a well-defined bilinear form.  $F_{\mathrm{old}}$ is not $C^2$ at 0.
-
-The \textbf{fix}: set $F = 0$ for $|X| < \varepsilon$ (inner zone).  The origin is never reached by $F_{\mathrm{angular}}$.  The transition uses a flat cutoff $\chi$ at $|X| = \varepsilon$, giving $C^\infty$ matching to all orders.
-
-\subsection{Product Lagrangian Edge Smoothing (Node 1.4)}
-
-The key insight: in edge-adapted Darboux coordinates, \emph{both faces lie in} $\{y_1 = 0\}$.  This is forced by the symplectic structure: both face planes contain the edge direction $e_1$, and $\omega(e_1, \cdot) = dy_1$ vanishes on both planes.  Any surface of the form $\{(x_1, \gamma(s), 0, \ldots)\}$ is automatically Lagrangian because $dy_1 = 0$ kills $dx_1 \wedge dy_1$, and $dx_2 \wedge dy_2 = (\text{function}) \cdot ds \wedge ds = 0$.
-
-This eliminates the need for any Moser correction, Weinstein perturbation, or symplectic error analysis.
-
-\subsection{Overlap Matching via $\{y_1 = 0\}$ Compatibility (Node 1.5)}
-
-The Phase~A/Phase~B matching works because Node~1.3's angular interpolation between two face planes \emph{stays in} $\{y_1 = 0\}$: both face planes have $y_1 = 0$, so any smoothly-weighted combination also has $y_1 = 0$.  The resulting cross-section in the $(x_2, y_2)$-plane is $x_1$-independent (the angular interpolation depends only on $\theta$ and $|X|$, not on the longitudinal coordinate).  This allows choosing $\gamma = \gamma_A$ (the vertex construction's profile), making the overlap matching \emph{exact}.
-
-\subsection{Phase~B Identity on $\gamma_1$ (Node 1.5)}
-
-The over-correction problem: Phase~A produces smooth profile $\gamma_1$ inside vertex balls; Phase~B's Hamiltonian (designed to map V-shape $\gamma_0 \to \gamma_1$) would move $\gamma_1$ further.
-
-The fix: construct $H_{e_k}$ so that $\varphi_1^{H_{e_k}}$ is the \emph{identity on} $\gamma_1$.  Since $\gamma_1$ avoids the V-shape corner (it rounds the corner at distance $r > 0$), the Hamiltonian can be supported in a small neighborhood of the corner that does not intersect $\gamma_1$.  Inside vertex balls (where the surface already has profile $\gamma_1$), Phase~B leaves it unchanged.
-
-\subsection{Maslov Class via Contractibility (Node 1.8)}
-
-The old signature formula $\mathrm{sign}(B - A)$ for the relative Maslov index requires $B - A$ nonsingular, but consecutive differences are rank~1 (consecutive planes share a line).  The fix: all 4 planes lie in a single cotangent chart $U_\Lambda \cong \R^3$ (contractible), so any loop is null-homotopic $\Rightarrow$ $\mu(v) = 0$, regardless of transversality.
-
-
-%======================================================================
-\section{Assessment of Correctness}
-\label{sec:assessment}
-%======================================================================
-
-\subsection{What Is Secure}
-
-\begin{center}
-\begin{tabular}{@{}llc@{}}
-\toprule
-\textbf{Node} & \textbf{Content} & \textbf{Status} \\
-\midrule
-1.2 & Vertex classification and $\Sp(4,\R)$ normal form & \textcolor{proved}{VALIDATED} \\
-1.4 & Edge smoothing via product Lagrangian & \textcolor{proved}{VALIDATED} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-These nodes are clean, self-contained, and have survived two rounds of adversarial verification.
-
-\subsection{What Is Likely Correct (Challenges Resolved)}
-
-\begin{itemize}
-\item \textbf{Node 1.3} (vertex smoothing, two-zone construction): The inner-zone-equals-zero trick is clean and eliminates the Fourier mode obstruction.  26 challenges raised and resolved across 7 sessions.
-\item \textbf{Node 1.5} (global assembly): The direct construction approach with overlap matching is mathematically sound.  23 challenges resolved, including 6 critical ones about the Phase~A/B boundary.
-\item \textbf{Node 1.6} (Hamiltonian isotopy): Standard smooth concatenation with flat reparametrization.  10 challenges resolved.
-\item \textbf{Node 1.8} (obstruction analysis): The contractibility argument for Maslov class is clean; the Shevchishin--Nemirovski scope restriction is well-established.  11 challenges resolved.
-\item \textbf{Node 1.7} (topological extension): Straightforward convergence argument using the explicit generating function families.  Not yet adversarially verified.
-\end{itemize}
-
-\subsection{What Remains Uncertain}
-
-\begin{itemize}
-\item \textbf{Overlap matching (Node 1.5, Step 5)}: The claim that Node~1.3's angular interpolation profile exactly matches Node~1.4's edge profile in the overlap strip is the most delicate technical point.  It relies on the $\{y_1 = 0\}$ compatibility and the $x_1$-independence of the angular interpolation.  A fresh verification wave should scrutinize this.
-\item \textbf{Phase~B Hamiltonian identity (Node 1.5, Step 10)}: The construction of $H_{e_k}$ with $\varphi_1^{H_{e_k}} = \mathrm{id}$ on $\gamma_1$ requires careful support control.  The argument that the support can be kept away from $\gamma_1$ needs verification.
-\item \textbf{Non-compact extension (Node 1.5, Step 11)}: The locally-finite sum argument for non-compact $K$ is sketched rather than proved.  However, the problem statement says ``finite polyhedral complex,'' which typically implies compactness.
-\end{itemize}
-
-\subsection{Overall Assessment}
-
-\begin{center}
-\begin{tabular}{@{}lp{9cm}@{}}
-\toprule
-\textbf{Component} & \textbf{Assessment} \\
-\midrule
-Answer (YES) & \textbf{Medium--High (70--75\%).}  The explicit construction is promising, but the proof has not yet been fully verified in its current form. \\[4pt]
-Vertex classification (1.2) & \textbf{High.}  Validated.  The $\Sp(4,\R)$ normal form calculation is clean. \\[4pt]
-Two-zone construction (1.3) & \textbf{Medium--High.}  Eliminates the Fourier obstruction.  Not yet re-verified. \\[4pt]
-Edge smoothing (1.4) & \textbf{High.}  Validated.  The product Lagrangian argument is elegant and self-contained. \\[4pt]
-Global assembly (1.5) & \textbf{Medium.}  The most complex node.  The overlap matching and Phase~B identity are the critical unverified claims. \\[4pt]
-Hamiltonian isotopy (1.6) & \textbf{Medium--High.}  Standard techniques, clearly written. \\[4pt]
-Topological extension (1.7) & \textbf{Medium--High.}  Straightforward convergence. \\[4pt]
-Obstruction analysis (1.8) & \textbf{Medium--High.}  Contractibility argument is clean. \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-
-%======================================================================
-\section{Prospects and Recommended Next Steps}
-\label{sec:prospects}
-%======================================================================
-
-The proof is in strong shape: all construction nodes have 0 open challenges after 7 sessions of adversarial refinement.  The main risk is that the current versions of Nodes 1.3, 1.5, 1.6, 1.7, and 1.8 have not yet been adversarially re-verified after their rewrites.
-
-\subsection{Immediate Next Steps}
-
-\begin{enumerate}
-\item \textbf{Verification wave 3}: Launch adversarial verifiers on all 7 pending nodes (1.1, 1.3, 1.5, 1.6, 1.7, 1.8, then root 1).  Priority: Node~1.5 (most complex, most critical).
-\item \textbf{Focus areas for verifiers}:
-  \begin{itemize}
-  \item Node 1.5 Step~5: Does the angular interpolation really stay in $\{y_1 = 0\}$?  Is the cross-section really $x_1$-independent?
-  \item Node 1.5 Step~10: Can the Phase~B Hamiltonian really be made zero on $\gamma_1$?
-  \item Node 1.3 Step~4: Is the two-zone cutoff really flat to all orders at $|X| = \varepsilon$?
-  \end{itemize}
-\item \textbf{After verification}: If new challenges arise, launch targeted prover wave.
+The \texttt{af} Node~1.2 proves:
+\begin{enumerate}[label=(\alph*)]
+\item The tangent cone at each vertex consists of 4 Lagrangian sectors in distinct planes.
+\item Type~B (opposite sectors coplanar) is impossible for topological submanifolds.
+\item All configurations are $\Sp(4,\R)$-equivalent to a unique normal form.
 \end{enumerate}
 
-\subsection{Potential Failure Modes}
-
-\begin{enumerate}
-\item \textbf{Overlap matching failure}: If Node~1.3's angular interpolation does NOT stay in $\{y_1 = 0\}$ (e.g., because the Sp(4)-coordinate change mixes $y_1$ with other coordinates), the overlap matching breaks.  This would require a fundamentally different global assembly strategy.
-\item \textbf{Phase~B support collision}: If the Phase~B Hamiltonian support cannot avoid $\gamma_1$ (e.g., because $\gamma_1$ passes through the V-shape corner region), the over-correction problem returns.
-\item \textbf{Klein bottle obstruction}: If compact polyhedral Lagrangian Klein bottles with 4-valent vertices exist, the theorem requires a topological hypothesis (orientability or torus).
-\end{enumerate}
-
-\subsection{Assessment of Likelihood of Success}
-
-Based on 7 sessions of adversarial refinement:
+\paragraph{Consistency with the official solution.}
+This is \textbf{fully consistent} with and essentially equivalent to Abouzaid's Lemma~1.  The main difference is presentation:
 \begin{itemize}
-\item The local constructions (Nodes 1.2, 1.3, 1.4) are essentially solid.
-\item The global assembly (Node 1.5) is the critical path.  It has survived 23 challenges (including 6 critical) and been completely rewritten with a mathematically cleaner approach (direct construction + overlap matching).
-\item \textbf{Estimated probability of a correct proof}: 55--65\%.  The main uncertainty is whether the overlap matching argument (Node~1.5, Step~5) survives fresh adversarial scrutiny.
-\item \textbf{Estimated probability that the answer is YES}: 70--75\%.  Even if the current proof has gaps, the explicit constructions suggest the conjecture is true.
+\item Abouzaid works with edge tangent vectors $v_1, v_2, u_1, u_2$ and shows they form a symplectic basis.
+\item The \texttt{af} system works with face planes $\Pi_i$ and their intersections, classifying via the Lagrangian Grassmannian.
+\end{itemize}
+The mathematical content is the same.  The \texttt{af} version is more detailed (it explicitly addresses the Type~B impossibility and the 1-parameter family reduction), which is appropriate for an adversarial framework but unnecessary for the proof itself.
+
+\paragraph{Assessment:} The 3 remaining open challenges (minor/note) concern expository issues (arc length justification, parabolic subgroup mention, $\pi_1(\LG(2,4))$ short exact sequence).  None affect the mathematical validity.  \textbf{This node is sound.}
+
+\subsection{Node 1.4: Edge Smoothing}
+
+The \texttt{af} Node~1.4 proves that in edge-adapted Darboux coordinates, both faces lie in $\{y_1 = 0\}$, and replacing the V-shaped transverse profile with a smooth curve gives an automatically Lagrangian surface.
+
+\paragraph{Consistency with the official solution.}
+This is \textbf{consistent} with Abouzaid's treatment of edges.  Abouzaid's Lemma~4 observes that $\Sigma$ near an edge splits as a product of the real axis with piecewise-linear Lagrangian in the transverse $\R^2$, which is precisely the content of the \texttt{af}'s $\{y_1 = 0\}$ observation.
+
+However, the two approaches extract different conclusions:
+\begin{itemize}
+\item The \texttt{af} performs an \emph{explicit} smoothing (replace the V-profile with a smooth curve) and verifies the Lagrangian condition by computation.
+\item Abouzaid proves that the space of admissible Lagrangian planes~$L$ near an edge is \emph{contractible} (Lemma~4), which feeds into the global conormal fibration argument.
 \end{itemize}
 
+The \texttt{af}'s explicit construction is correct as a local result.  The difficulty is that it does not naturally compose with the vertex smoothing into a global object---precisely the local-to-global gap.
+
+\paragraph{Assessment:} The 3 remaining open challenges (minor) concern compact support, the Hamiltonian property, and terminology.  \textbf{This node is sound as a local result.}
+
 
 %======================================================================
-\section{Key References}
-\label{sec:refs}
+\section{The Local-to-Global Gap}
+\label{sec:gap}
 %======================================================================
+
+The authors' commentary on AI-generated solutions identifies the local-to-global gluing argument as the key failure point:
+
+\begin{quote}
+``The proof then proceeds to perform a local-to-global gluing argument.  It was a priori clear that there must be a gap in this argument because the LLM solution refers to the existence of a linear symplectic transformation that brings a neighbourhood of each vertex and each edge into a standard position, but fails to discuss the compatibility between these choices.''
+\end{quote}
+
+Two specific errors were identified in the best AI solutions:
+\begin{enumerate}
+\item One solution ``asserted that one can choose disjoint neighbourhoods of the edges and of the vertices.''
+\item Another ``performs a local move near vertices, which changes the local geometry near the edges, invalidating the application of the edge move.''
+\end{enumerate}
+
+\subsection{How the \texttt{af} Attempt Addresses This}
+
+The \texttt{af} system's Node~1.5 (global assembly) directly confronts the local-to-global problem.  Its strategy is:
+\begin{enumerate}
+\item Use overlapping (not disjoint) domains: vertex balls $V_i = B_{\delta_i + \eta}(v_i)$ overlap edge middles $E_k$ by width $\eta$.
+\item Argue that the vertex smoothing (angular interpolation) and edge smoothing (constant profile) agree in the overlap, because both lie in $\{y_1 = 0\}$.
+\item Use a two-phase sequential Hamiltonian: Phase~A (vertices) then Phase~B (edges), with Phase~B designed to be the identity on the already-smoothed profile $\gamma_1$.
+\end{enumerate}
+
+This is a more sophisticated attempt than the naive ``choose disjoint neighbourhoods'' approach identified as Error~1 in the commentary.  The \texttt{af} system explicitly uses overlapping domains and argues for compatibility.  It also avoids Error~2 (local vertex move invalidating edge geometry) by designing Phase~B to be the identity where Phase~A has already acted.
+
+\subsection{Does the \texttt{af} Approach Actually Work?}
+
+The \texttt{af} approach has a plausible structure, but several issues remain:
+
+\paragraph{Coordinate compatibility.}
+The overlap matching requires that the vertex construction's angular interpolation, expressed in vertex cotangent coordinates, agrees with the edge construction's product Lagrangian, expressed in edge-adapted Darboux coordinates.  The \texttt{af} claims this follows from $\{y_1 = 0\}$ compatibility, but the coordinate change between vertex and edge coordinates may mix $y_1$ with other coordinates.  The \texttt{af} report itself identifies this as the primary risk (Node~1.5, Step~5).
+
+\paragraph{Phase~B support control.}
+The claim that Phase~B's Hamiltonian can be supported away from $\gamma_1$ (the already-smoothed profile) requires careful analysis of the geometry.  If $\gamma_1$ passes through the region where the V-shape needs to be smoothed, the support cannot be made disjoint.
+
+\paragraph{Contrast with the official solution.}
+Abouzaid's proof avoids all of these issues by construction.  The conormal fibration $\{L_z\}$ is a \emph{global} object whose existence is guaranteed by contractibility arguments.  There is no need to check compatibility of coordinate changes, because the smoothing functions are defined intrinsically on $K$.  The partition of unity operates on scalar functions, not on ambient Lagrangians.  The authors' commentary notes:
+
+\begin{quote}
+``The errors in these solutions can be repaired at the cost of significant computations of changes of coordinates, which would become extremely burdensome in any generalisation.  The point of the solution we provide is to obtain a proof which avoids (most of) the hard work, and which experts can readily generalise to other symplectic manifolds (in any dimension).''
+\end{quote}
+
+This strongly suggests that the \texttt{af} approach \emph{can} be made to work in principle (``the errors can be repaired''), but requires substantial additional computation that the \texttt{af} system did not carry out.  The coordinate compatibility checks at overlaps would require explicit formulas for the coordinate changes, which grow in complexity with the number of faces and edges.
+
+\subsection{The Fundamental Conceptual Gap}
+
+The deepest insight of Abouzaid's proof is the \emph{smoothing function} concept: the condition for a Lagrangian to smooth~$\Sigma$ is encoded in a \emph{linear} condition on scalar functions ($f + q^\Sigma \in C^\infty$), and this linear space is invariant under addition of smooth functions.  This linearity is what makes the partition of unity argument work cleanly.
+
+The \texttt{af} system never discovers this linearization.  Its generating functions are nonlinear objects (quadratic forms patched together), and the smoothing is performed by explicit geometric construction.  The absence of the smoothing function concept forces the \texttt{af} system into coordinate-dependent arguments that become increasingly difficult to manage globally.
+
+This is not merely a matter of elegance.  The smoothing function framework provides:
+\begin{enumerate}
+\item \textbf{Polarization independence} (Lemma~2): the space $\mathcal{S}(\Sigma)$ depends only on $L$, not on the splitting.
+\item \textbf{Partition of unity compatibility}: smoothing functions can be combined via partitions of unity because the smoothing condition is affine.
+\item \textbf{$C^1$-norm control} (Lemma~7): the dilation trick gives smoothing functions of arbitrarily small norm.
+\item \textbf{Dimension-free generalization}: the argument extends to higher dimensions without additional computation.
+\end{enumerate}
+
+None of these properties are available to the \texttt{af} approach.
+
+
+%======================================================================
+\section{Lessons Learned}
+\label{sec:lessons}
+%======================================================================
+
+\subsection{What the \texttt{af} System Did Well}
+
+\begin{enumerate}
+\item \textbf{Correct local analysis.}  The vertex normal form (Node~1.2) and edge product structure (Node~1.4) are mathematically correct and consistent with the official solution.  The linear algebra underlying the local smoothing is essentially the same.
+
+\item \textbf{Effective adversarial process.}  The adversarial framework successfully identified genuine errors: the Fourier mode obstruction at the origin (Sessions~3--4) and the tropical resolution dead end (Sessions~1--2).  The system's ability to detect and repair flaws led to progressively stronger proof attempts.
+
+\item \textbf{Reasonable strategic pivots.}  The evolution from tropical resolution to cotangent generating functions to the two-zone construction shows adaptive problem-solving.  Each pivot was motivated by a concrete failure identified by the adversarial process.
+
+\item \textbf{Honest self-assessment.}  The final confidence of 55--65\% for proof correctness (70--75\% for the answer) is realistic.  The system correctly identified the global assembly as the weakest point.
+\end{enumerate}
+
+\subsection{What the \texttt{af} System Missed}
+
+\begin{enumerate}
+\item \textbf{The smoothing function concept.}  The key abstraction---that smooth Lagrangians near a singular vertex correspond to elements of a \emph{linear} space of scalar functions---was not discovered.  This is arguably the central mathematical insight of the official solution.
+
+\item \textbf{Contractibility as a gluing tool.}  Abouzaid's proof repeatedly uses contractibility of spaces of choices (Lagrangian planes near edges in Lemma~4, Lagrangian lifts in the proof of Lemma~4, extensions to face interiors in Lemma~8) to solve the compatibility problem.  The \texttt{af} system uses explicit constructions and support arguments instead, which is harder and less general.
+
+\item \textbf{The conormal fibration.}  The global geometric object $\{L_z\}_{z \in K}$ that simultaneously parametrizes all local smoothings was not conceived.  This is the device that transforms the local-to-global problem from a coordinate-compatibility nightmare into a clean existence argument.
+
+\item \textbf{Intrinsic vs.\ extrinsic perspective.}  The \texttt{af} system works entirely in ambient coordinates, while Abouzaid works with intrinsic objects on $K$ (smoothing functions, conormal fibrations, the smooth structure inherited from $L^\vee$).  The intrinsic perspective is what makes the global argument tractable.
+\end{enumerate}
+
+\subsection{Broader Implications}
+
+\paragraph{Local arguments are within reach of AI.}
+The \texttt{af} system's success on the local analysis (vertex normal form, edge product structure) suggests that AI systems can handle problems that reduce to linear algebra and explicit computation in coordinates.  These are essentially ``finite-dimensional'' arguments.
+
+\paragraph{Global geometric arguments remain difficult.}
+The failure on the global assembly reflects a deeper challenge: the official solution requires inventing a \emph{new concept} (smoothing functions, conormal fibrations) that reframes the problem.  AI systems tend to work within existing frameworks rather than creating new abstractions.  The conormal fibration is not a standard textbook construction---it is a new idea tailored to this specific problem.
+
+\paragraph{The adversarial process has value but cannot substitute for insight.}
+The adversarial framework was effective at detecting errors and forcing repairs, but it could not generate the key conceptual innovation.  The progression tropical resolution $\to$ generating functions $\to$ two-zone construction represents increasingly sophisticated \emph{implementations} of the same basic strategy (local smoothing + Hamiltonian gluing), not a fundamental rethinking of the approach.
+
+\paragraph{Coordinate-free thinking matters.}
+The contrast between the \texttt{af} approach (coordinate-dependent, explicit) and Abouzaid's approach (coordinate-free, conceptual) illustrates a broader point: mathematical proofs that work in coordinates often cannot scale (to higher dimensions, more general settings, or more complex configurations), while proofs based on structural properties (contractibility, linearity, functoriality) tend to generalize.  AI systems may benefit from being steered toward coordinate-free formulations.
+
+
+%======================================================================
+\section{Summary}
+\label{sec:summary}
+%======================================================================
+
+\begin{center}
+\begin{tabular}{@{}p{4.5cm}p{5cm}p{5cm}@{}}
+\toprule
+\textbf{Aspect} & \textbf{\texttt{af} Attempt} & \textbf{Official Solution} \\
+\midrule
+Vertex normal form & $\Sp(4,\R)$ classification (correct) & Linear symplectic basis (equivalent) \\[4pt]
+Local smoothing concept & Generating functions, two-zone & Smoothing functions $\mathcal{S}(\Sigma)$ \\[4pt]
+Edge treatment & Product Lagrangian (correct) & Contractibility of choices \\[4pt]
+Local-to-global strategy & Two-phase Hamiltonian, overlap matching & Conormal fibration \\[4pt]
+Key tool for gluing & Coordinate compatibility & Contractibility \\[4pt]
+Partition of unity target & Generating functions (nonlinear) & Smoothing functions (linear) \\[4pt]
+Coordinate dependence & Heavy & Minimal (intrinsic) \\[4pt]
+Generalizability & Limited to $\R^4$ & Any symplectic manifold \\[4pt]
+Status & 2/9 nodes validated, 55--65\% & Complete proof \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+
+The \texttt{af} automated attempt correctly solved the local part of the problem (vertex classification and edge smoothing) using essentially the same linear algebra as the official solution.  It also correctly identified the answer as YES and made reasonable strategic adjustments when dead ends were encountered.  However, it did not discover the key conceptual innovations---smoothing functions and conormal fibrations---that make Abouzaid's global argument work.  The local-to-global gap identified by the authors' commentary is precisely the point where the \texttt{af} system's coordinate-dependent approach becomes inadequate, and where Abouzaid's intrinsic, contractibility-based approach succeeds.
+
+The authors' observation that ``the errors in these solutions can be repaired at the cost of significant computations of changes of coordinates'' applies directly to the \texttt{af} attempt: the two-zone construction and overlap matching strategy is not fundamentally wrong, but completing it would require extensive coordinate calculations that the system did not (and perhaps could not) perform.  The official solution shows that the right abstraction can eliminate this computational burden entirely.
+
 
 \begin{thebibliography}{99}
+
+\bibitem{Abouzaid26}
+M.~Abouzaid,
+\emph{First Proof: Solutions and Comments} (Problem~8),
+February 2026.
 
 \bibitem{MS17}
 D.~McDuff and D.~Salamon,
 \emph{Introduction to Symplectic Topology},
 3rd ed., Oxford University Press, 2017.
 
-\bibitem{JR24}
-A.~Jauberteau and Y.~Rollin,
-\emph{Piecewise-linear Lagrangian submanifolds and the Darboux theorem},
-2024.
+\bibitem{Hirsch76}
+M.~W.~Hirsch,
+\emph{Differential Topology},
+Graduate Texts in Mathematics, Springer, 1976.
 
 \bibitem{Matessi19}
 D.~Matessi,
 \emph{Lagrangian pairs of pants},
-Int.\ Math.\ Res.\ Not.\ \textbf{2019} (2019), no.~15, 4683--4723.
+Int.\ Math.\ Res.\ Not.\ \textbf{2019}, no.~15, 4683--4723.
 
 \bibitem{Mikhalkin19}
 G.~Mikhalkin,
@@ -468,209 +487,6 @@ L.~Polterovich,
 \emph{The surgery of Lagrange submanifolds},
 Geom.\ Funct.\ Anal.\ \textbf{1} (1991), 198--210.
 
-\bibitem{Shev09}
-V.~V.~Shevchishin,
-\emph{Lagrangian embeddings of the Klein bottle and combinatorial properties of mapping class groups},
-J.\ Symplectic Geom.\ \textbf{7} (2009), no.~1, 85--106.
-
-\bibitem{Nem09}
-S.~Yu.~Nemirovski,
-\emph{Homology class of a Lagrangian Klein bottle},
-Geom.\ Funct.\ Anal.\ \textbf{19} (2009), 902--909.
-
-\bibitem{Gromov85}
-M.~Gromov,
-\emph{Pseudo holomorphic curves in symplectic manifolds},
-Invent.\ Math.\ \textbf{82} (1985), 307--347.
-
-\bibitem{Weinstein71}
-A.~Weinstein,
-\emph{Symplectic manifolds and their Lagrangian submanifolds},
-Adv.\ Math.\ \textbf{6} (1971), 329--346.
-
-\bibitem{Banyaga78}
-A.~Banyaga,
-\emph{Sur la structure du groupe des diff\'eomorphismes qui pr\'eservent une forme symplectique},
-Comment.\ Math.\ Helv.\ \textbf{53} (1978), 174--227.
-
 \end{thebibliography}
-
-
-\newpage
-%======================================================================
-\appendix
-\section{Proof Tree}
-\label{app:tree}
-%======================================================================
-
-The complete proof tree as exported from the adversarial proof framework (\texttt{af export}).
-Status key: \textcolor{proved}{\textbf{V}}~=~validated,
-\textcolor{pending}{\textbf{P}}~=~pending.
-Resolved/Total challenges in parentheses.
-
-{\small\begin{verbatim}
-1 [P] Root: Polyhedral Lagrangian surface K in R^4 with 4
-  |  faces/vertex has a Lagrangian smoothing.
-  |  Challenges: 0 open / 0 total
-  |
-  +-- 1.1 [P] Strategy Overview (YES)
-  |   7-step proof: classify, smooth vertices, smooth edges,
-  |   assemble, verify Hamiltonian, extend to t=0, check obstructions.
-  |   Challenges: 0 open / 0 total
-  |
-  +-- 1.2 [V] Vertex Classification LEMMA
-  |   4 Lagrangian planes, Type B impossible, unique Sp(4,R) normal form.
-  |   Challenges: 3 open / 11 total (minor/note only)
-  |
-  +-- 1.3 [P] Vertex Smoothing (two-zone construction)
-  |   F_smooth = chi(|X|/eps)*F_angular. Inner zone: F=0.
-  |   Hamiltonian via shrinking inner-zone family.
-  |   Challenges: 0 open / 26 total (ALL RESOLVED)
-  |
-  +-- 1.4 [V] Edge Smoothing (product Lagrangian)
-  |   Both faces in {y1=0}. Replace V-shape with smooth curve.
-  |   Lagrangian automatic: ds^ds = 0.
-  |   Challenges: 3 open / 11 total (minor only)
-  |
-  +-- 1.5 [P] Global Assembly (direct construction)
-  |   Overlapping domains, matching via {y1=0} compatibility.
-  |   Phase A (vertices) + Phase B (edges, identity on gamma_1).
-  |   Challenges: 0 open / 23 total (ALL RESOLVED)
-  |
-  +-- 1.6 [P] Hamiltonian Isotopy LEMMA
-  |   Local smoothings Hamiltonian by construction.
-  |   Smooth concatenation with flat reparametrization.
-  |   Challenges: 0 open / 10 total (ALL RESOLVED)
-  |
-  +-- 1.7 [P] Topological Extension LEMMA
-  |   G_t -> F_PL pointwise, Hausdorff d_H -> 0.
-  |   ||H_t||_{C^0} -> 0 implies ||phi_t - id||_{C^0} -> 0.
-  |   Challenges: 0 open / 0 total (newly rewritten)
-  |
-  +-- 1.8 [P] Obstruction Analysis LEMMA
-      Maslov: contractibility of cotangent chart => mu(v)=0.
-      Floer: irrelevant. Topology: torus only (Klein excluded).
-      Challenges: 0 open / 11 total (ALL RESOLVED)
-\end{verbatim}}
-
-
-\newpage
-%======================================================================
-\section{Open Challenge List}
-\label{app:challenges}
-%======================================================================
-
-Only 6 challenges remain open, all on already-validated nodes.
-
-{\footnotesize
-\begin{longtable}{@{}p{2.5cm}p{1cm}p{1.2cm}p{8.5cm}@{}}
-\toprule
-\textbf{Challenge ID} & \textbf{Node} & \textbf{Severity} & \textbf{Summary} \\
-\midrule
-\endhead
-ch-4891382446d & 1.2 & minor & Step~3: arc length claim needs justification \\
-ch-ae7618124d7 & 1.2 & note & Step~4c: parabolic subgroup mention unclear \\
-ch-f6b458ddb17 & 1.2 & note & Step~5: short exact sequence for $\pi_1(\LG(2,4))$ \\
-\midrule
-ch-79e6bc88891 & 1.4 & minor & Step~7: compact support claim for isotopy \\
-ch-cbce516712f & 1.4 & minor & Step~7: simply-connected $\Rightarrow$ Hamiltonian \\
-ch-e4114cd7f84 & 1.4 & minor & Step~7: ``Lagrangian isotopy'' terminology \\
-\bottomrule
-\end{longtable}
-}
-
-
-\newpage
-%======================================================================
-\section{Definitions and External References}
-\label{app:defs}
-%======================================================================
-
-\subsection*{Definitions Registered in \texttt{af}}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Name} & \textbf{Concept} \\
-\midrule
-\texttt{symplectic\_R4} & $(\R^4, \omega_{\mathrm{std}})$ with $\omega = dx_1 \wedge dy_1 + dx_2 \wedge dy_2$ \\
-\texttt{Lagrangian\_submanifold} & 2-surface $L$ with $\omega|_L = 0$ \\
-\texttt{polyhedral\_Lagrangian\_surface} & Finite polyhedral complex with Lagrangian faces \\
-\texttt{Lagrangian\_smoothing} & Hamiltonian isotopy $K_t$ on $(0,1]$, topological on $[0,1]$, $K_0 = K$ \\
-\texttt{Hamiltonian\_isotopy} & Isotopy generated by a (time-dependent) Hamiltonian $H_t$ \\
-\bottomrule
-\end{tabular}
-
-\subsection*{External References Registered in \texttt{af}}
-
-\begin{tabular}{@{}ll@{}}
-\toprule
-\textbf{Name} & \textbf{Source} \\
-\midrule
-Matessi tropical Lagrangian smoothing & Matessi (2019) \\
-Mikhalkin tropical-to-Lagrangian & Mikhalkin (2019) \\
-Hicks tropical Lagrangian unobstructedness & Hicks (2020) \\
-Polterovich Lagrangian surgery & Polterovich (1991) \\
-Jauberteau--Rollin PL Lagrangian geometry & Jauberteau--Rollin (2024) \\
-Shevchishin--Nemirovski non-orientable obstruction & Shevchishin (2009), Nemirovski (2009) \\
-Lagrangian topology & McDuff--Salamon (2017) \\
-Polyhedral Lagrangians & (various) \\
-\bottomrule
-\end{tabular}
-
-
-\newpage
-%======================================================================
-\section{Resolved Challenge Summary}
-\label{app:resolved}
-%======================================================================
-
-This appendix summarizes the 84 resolved challenges by node.
-
-\subsection*{Node 1.2 --- Vertex Classification (8 resolved)}
-\begin{itemize}[nosep]
-\item 1 critical: Type~B impossibility proof needed explicit argument
-\item 4 major: topological disk claim, classification logic, tangent cone structure, counterexample analysis
-\item 2 minor: Sp(4) equivalence wording, Grassmannian intersection detail
-\item 1 note: inference type should be lemma
-\end{itemize}
-
-\subsection*{Node 1.3 --- Vertex Smoothing (26 resolved)}
-\begin{itemize}[nosep]
-\item 7 critical: $F_{\mathrm{smooth}}$ not $C^\infty$ at origin (Fourier modes), Hessian direction-dependent, $D(X)$ non-smoothness, tropical resolution undefined, Matessi--Mikhalkin inapplicable, conceptual confusion (generating functions vs.\ surgery)
-\item 10 major: Polterovich neck formula wrong, Hamiltonian generation, product vs.\ non-product vertices, general $\gamma$, Type~B vacuous, sign error, non-uniqueness, alternative approaches
-\item 5 minor: embeddedness, inference type, dimension formula, sign, Type~B case
-\item 1 note: potential fix direction identified
-\end{itemize}
-
-\subsection*{Node 1.4 --- Edge Smoothing (8 resolved)}
-\begin{itemize}[nosep]
-\item 1 critical: Moser trick incorrectly invoked (removed entirely)
-\item 4 major: Moser correction unnecessary, compact support, compatibility with 1.3, wrong proof structure
-\item 2 minor: adapted coordinates, embeddedness
-\item 1 minor: dependency declaration
-\end{itemize}
-
-\subsection*{Node 1.5 --- Global Assembly (23 resolved)}
-\begin{itemize}[nosep]
-\item 6 critical: Phase~A/B design flaw (overlap), Lagrangian verification on non-smooth $K$, edge-vertex junction, tropical resolution new edges, Node~1.3 propagation, completeness gap
-\item 12 major: disjoint supports, concatenation smoothness, Phase~B transition zone, support inconsistency, Lagrangian with cutoff, boundary conditions, face-edge junction, embeddedness on non-smooth $K$, sequential vs.\ simultaneous, non-compact case, dependencies, extended radius
-\item 3 minor: Poisson bracket precision, terminology, inference type
-\end{itemize}
-
-\subsection*{Node 1.6 --- Hamiltonian Isotopy (10 resolved)}
-\begin{itemize}[nosep]
-\item 1 critical: Node~1.3 propagation
-\item 4 major: concatenation discontinuity, Weinstein correction artifact, exactness claim, local-to-global
-\item 3 minor: exhaustion, Phase~B coordinates, flux claim
-\item 1 note: Banyaga attribution
-\end{itemize}
-
-\subsection*{Node 1.8 --- Obstruction Analysis (11 resolved)}
-\begin{itemize}[nosep]
-\item 2 critical: Maslov index mathematical error, structural issue (no proof)
-\item 5 major: Maslov non-transversality, energy bound dependency, monodromy, Floer theory, exhaustiveness
-\item 3 minor: embeddedness local/global, Klein bottle, non-orientability
-\end{itemize}
-
 
 \end{document}

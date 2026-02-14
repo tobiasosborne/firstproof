@@ -10,11 +10,7 @@
 \usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{array}
-\usepackage{longtable}
-\usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{tikz}
-\usetikzlibrary{trees,arrows.meta,positioning}
 
 % --- Theorem environments ---
 \newtheorem{theorem}{Theorem}[section]
@@ -35,35 +31,35 @@
 \newcommand{\N}{\mathbb{N}}
 \newcommand{\ip}[2]{\langle #1, #2 \rangle}
 \newcommand{\norm}[1]{\|#1\|}
-\DeclareMathOperator{\Sm}{Sm}
-
-% --- Colors for status ---
-\definecolor{proved}{RGB}{0,128,0}
-\definecolor{admitted}{RGB}{0,128,192}
-\definecolor{pending}{RGB}{200,150,0}
-\definecolor{refuted}{RGB}{200,0,0}
+\DeclareMathOperator{\Var}{Var}
+\DeclareMathOperator{\Hess}{Hess}
 
 % --- Title ---
-\title{\textbf{Report on Problem~4: Superadditivity of Inverse Fisher Information under Finite Free Additive Convolution}\\[6pt]
-\large Adversarial Proof Framework Analysis}
-\author{Generated from the \texttt{af} proof workspace\\
-First Proof Project}
+\title{\textbf{Problem~4: The Finite Free Stam Inequality}\\[6pt]
+\large Critical Comparison of the Automated \texttt{af} Proof Attempt\\
+with the Official Solution of Garza Vargas--Srivastava--Stier}
+\author{First Proof Project --- Adversarial Proof Framework Analysis}
 \date{February 2026}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-This report documents the investigation of Problem~4 from the First Proof
-paper: the conjecture that the inverse finite free Fisher information
-$1/\Phin$ is superadditive under the Marcus--Spielman--Srivastava (MSS)
-finite free additive convolution $\boxplusn$.  The conjecture is the
-finite-$n$ analogue of Voiculescu's free Stam inequality (1998).  We
-describe the problem setup, the proof tree architecture (24 nodes across
-three independent proof paths), established results (base cases $n \le 4$,
-structural identities), exhausted approaches, and the remaining open hard
-steps.  The conjecture has been verified numerically with over two million
-random trials and zero violations.
+We present a critical comparison between the automated adversarial proof
+framework (\texttt{af}) attempt and the official correct solution for
+Problem~4 of the First Proof benchmark: the finite free Stam inequality,
+asserting that $1/\Phin(p \boxplusn q) \ge 1/\Phin(p) + 1/\Phin(q)$ for
+monic real-rooted polynomials $p,q$ of degree~$n$.  The \texttt{af}
+system explored three proof paths (subordination, de~Bruijn/concavity,
+and entropy power inequality), proved the result for $n \le 3$, and
+identified the $n \ge 4$ barrier as genuine.  The official proof by
+Garza Vargas, Srivastava, and Stier succeeds via a fourth approach not
+attempted by \texttt{af}: exploiting the Jacobian of the convolution
+map, variance additivity, and the convexity of partial sums of
+eigenvalues of hyperbolic polynomials (Bauschke et al., 2001), combined
+with Blachman's classical argument.  We analyze what the \texttt{af}
+system got right, where it went wrong, and what lessons this comparison
+yields for AI-assisted mathematical proof.
 \end{abstract}
 
 \tableofcontents
@@ -74,758 +70,635 @@ random trials and zero violations.
 \label{sec:problem}
 %======================================================================
 
-\subsection{Setup}
-
-The problem, posed by Nikhil Srivastava (UC Berkeley), lies at the
-intersection of free probability and spectral theory.
-
-\begin{definition}[Monic real-rooted polynomials]
-Let $\Pn$ denote the set of monic polynomials of degree~$n$ with all roots
-real and simple.  For $p \in \Pn$, write
+For monic polynomials $p(x) = \prod_{i=1}^n(x - \alpha_i)$ and
+$q(x) = \prod_{i=1}^n(x - \beta_i)$ with all roots real, the
+\emph{finite free additive convolution} $p \boxplusn q$ is defined via
+the Marcus--Spielman--Srivastava (MSS) formula:
 \[
-  p(x) = \prod_{i=1}^n (x - \lambda_i), \qquad \lambda_1 < \cdots < \lambda_n.
+  (p \boxplusn q)(x) = \sum_{k=0}^n c_k\, x^{n-k},
+  \qquad
+  c_k = \sum_{i+j=k} \frac{(n-i)!\,(n-j)!}{n!\,(n-k)!}\, a_i\, b_j,
 \]
-\end{definition}
-
-\begin{definition}[Finite free additive convolution {\cite{MSS15}}]
-\label{def:boxplus}
-For $p, q \in \Pn$ with coefficient vectors $(a_0, \ldots, a_n)$,
-$(b_0, \ldots, b_n)$ (where $a_0 = b_0 = 1$), define $r = p \boxplusn q$ by
+where $a_i,b_j$ are the coefficients of $p,q$.  Equivalently, via the
+permanent-like formula:
 \[
-  r(x) = \sum_{k=0}^n c_k \, x^{n-k}, \qquad
-  c_k = \sum_{i+j=k} \frac{(n-i)!\,(n-j)!}{n!\,(n-k)!} \, a_i \, b_j.
+  (p \boxplusn q)(x) = \sum_{\pi \in S_n} \prod_{i=1}^n (x - \alpha_i - \beta_{\pi(i)}).
 \]
-This is the MSS convolution.  It preserves real-rootedness: if
-$p, q \in \Pn$, then $p \boxplusn q \in \Pn$ \cite{MSS15}.
-\end{definition}
+Walsh (1922) showed that this preserves real-rootedness.
 
-\begin{definition}[Discrete Hilbert transform and Fisher information]
-For $p \in \Pn$ with roots $\lambda_1, \ldots, \lambda_n$, define the
-\emph{discrete Hilbert transform}
-\[
-  H_p(\lambda_i) := \sum_{j \neq i} \frac{1}{\lambda_i - \lambda_j}
-  = \frac{p''(\lambda_i)}{2\,p'(\lambda_i)},
-\]
-and the \emph{finite free Fisher information}
-\[
-  \Phin(p) := \sum_{i=1}^n H_p(\lambda_i)^2.
-\]
-Set $\Phin(p) = \infty$ if $p$ has a repeated root.
-\end{definition}
-
-\begin{remark}
-The functional $\Phin$ is a finite analogue of the free Fisher information
-$\Phi^*(\mu) = \int (H\mu)^2 \, d\mu$ introduced by Voiculescu \cite{V98}.
-In the large-$n$ limit, with empirical root measures converging,
-$\boxplusn \to \boxplus$ (free additive convolution) and
-$\Phin / n^2 \to \Phi^*$.
-\end{remark}
-
-\subsection{The Conjecture}
+The \emph{finite free score vector} is
+$\mathcal{J}_n(\alpha)_i = \sum_{j \neq i} \frac{1}{\alpha_i -
+\alpha_j}$, and the \emph{finite free Fisher information} is
+$\Phin(p) = \|\mathcal{J}_n(\alpha)\|^2$.  The conjecture, due to
+D.~Shlyakhtenko, is:
 
 \begin{conjecture}[Finite free Stam inequality]
 \label{conj:main}
-For all $p, q \in \Pn$ with $n \ge 2$,
-\begin{equation}
-\label{eq:stam}
-  \frac{1}{\Phin(p \boxplusn q)}
-  \;\ge\;
-  \frac{1}{\Phin(p)} + \frac{1}{\Phin(q)}.
+For all monic real-rooted polynomials $p, q$ of degree $n$,
+\begin{equation}\label{eq:stam}
+  \frac{1}{\Phin(p \boxplusn q)} \ge \frac{1}{\Phin(p)} + \frac{1}{\Phin(q)}.
 \end{equation}
 \end{conjecture}
 
 This is the finite-$n$ analogue of Voiculescu's free Stam inequality
-\cite{V98}, proved analytically by Shlyakhtenko--Tao \cite{ST20} in the
-continuum setting.  The constraint from the problem source asks for a proof
-of roughly five pages or fewer.
+\cite{V98}, proved in the continuum by Shlyakhtenko--Tao \cite{ST20}.
 
 %======================================================================
-\section{Numerical Evidence}
-\label{sec:numerics}
+\section{The Official Solution}
+\label{sec:official}
 %======================================================================
 
-Extensive numerical testing has been conducted across multiple independent
-codebases totalling approximately 28{,}000 lines of Python verification
-scripts.
+The proof by Garza Vargas, Srivastava, and Stier \cite{GVSSproof}
+proceeds in three steps.
 
-\begin{center}
-\begin{tabular}{@{}lccc@{}}
-\toprule
-\textbf{Degree $n$} & \textbf{Trials} & \textbf{Violations} & \textbf{Min.\ margin} \\
-\midrule
-$n = 2$ & $> 10{,}000$ & 0 & 0 (exact equality) \\
-$n = 3$ & $> 10{,}000$ & 0 & $> 0$ (strict) \\
-$n = 4$ & $> 10{,}000$ & 0 & $> 0$ (strict) \\
-$n = 5$ & $> 10{,}000$ & 0 & $> 0$ (strict) \\
-$n = 10$ & $> 10{,}000$ & 0 & $> 0$ (strict) \\
-\bottomrule
-\end{tabular}
-\end{center}
+\subsection{Step 1: Score vectors and the Jacobian}
 
-\noindent Total trials across all verification runs exceed 2{,}000{,}000
-with zero violations.  Equality holds if and only if $n \le 2$.
+Let $\gamma = \Omega_{\boxplusn}(\alpha,\beta)$ denote the ordered
+vector of roots of $p \boxplusn q$, and let $J_{\boxplusn}$ be the
+Jacobian of the map $\Omega_{\boxplusn}$ at $(\alpha,\beta)$.  The
+\emph{heat flow} $p_t = \exp(-\frac{t}{2}\partial_x^2) p$ moves the
+roots via $\alpha_i'(0) = \mathcal{J}_n(\alpha)_i$ (Lemma~1.1 of
+\cite{GVSSproof}).  Because finite free convolution commutes with
+differential operators, the identity $r_{(a+b)t} = p_{at} \boxplusn
+q_{bt}$ holds, which upon differentiation at $t=0$ yields
+\begin{equation}\label{eq:jacobian-score}
+  J_{\boxplusn}(a\,\mathcal{J}_n(\alpha),\; b\,\mathcal{J}_n(\beta))
+  = (a+b)\,\mathcal{J}_n(\gamma).
+\end{equation}
+This is the key structural identity relating the three score vectors
+through the Jacobian.
 
-Additional numerical evidence for subsidiary conjectures:
-\begin{itemize}
-\item \textbf{$1/\Phin$ concavity along heat flow:} $\frac{d^2}{dt^2}
-  \bigl(1/\Phin(p \boxplusn G_t)\bigr) \le 0$ tested in 590 random trials,
-  0 violations.
-\item \textbf{Finite free EPI:} $N(p \boxplusn q) \ge N(p) + N(q)$ where
-  $N(p) = \exp(2S(p)/m)$, tested in 13{,}770 random trials, 0 violations.
-\end{itemize}
+\subsection{Step 2: The Jacobian is a contraction on mean-zero vectors}
+
+The central technical result is:
+
+\begin{proposition}[Proposition~2.1 of \cite{GVSSproof}]
+\label{prop:contraction}
+If $u, v \in \R^n$ are both orthogonal to $\mathbf{1}_n$, then
+\[
+  \|J_{\boxplusn}(u,v)\|^2 \le \|u\|^2 + \|v\|^2.
+\]
+\end{proposition}
+
+The proof of this proposition uses two ingredients:
+
+\paragraph{Variance additivity and the Hessian identity.}
+The subspace $\mathcal{V} = \{(u,v) : u^\top \mathbf{1} = v^\top
+\mathbf{1} = 0\}$ has the property that perturbations within it preserve
+the means of $\alpha$ and $\beta$.  Differentiating the variance
+additivity relation $\Var(\gamma(t)) = \Var(\alpha(t)) +
+\Var(\beta(t))$ twice yields
+\begin{equation}\label{eq:hessian-identity}
+  w^\top J_{\boxplusn} J_{\boxplusn}^\top w
+  = \|w\|^2 - \sum_{i=1}^n \gamma_i\, w^\top H^{(i)}_{\boxplusn} w,
+  \qquad w \in \mathcal{V},
+\end{equation}
+where $H^{(i)}_{\boxplusn} = \Hess_{\Omega_{\boxplusn,i}}$ is the
+Hessian of the $i$-th coordinate function.
+
+\paragraph{Convexity from hyperbolic polynomials.}
+The multivariate polynomial $f(x, a, b) = \sum_{\pi \in S_n}
+\prod_{i=1}^n (x - a_i - b_{\pi(i)})$ is hyperbolic in the direction
+$e_1 = (1, 0, \ldots, 0)$.  A theorem of Bauschke, G\"uler, Lewis, and
+Sendov \cite{BGLS01} asserts that for hyperbolic polynomials, the
+partial sums $\sigma_k(a) = \sum_{i=1}^k \lambda_i(a)$ of the ordered
+roots are convex functions of the parameters.  Since the $\gamma_i$ are
+ordered, any linear combination $\sum c_i \gamma_i$ with $c_1 \ge
+\cdots \ge c_n$ can be written as a positive combination of the
+$\sigma_k$, and is therefore convex.  In particular,
+$\sum_i \gamma_i H^{(i)}_{\boxplusn}$ is positive semidefinite
+(Corollary~2.1 of \cite{GVSSproof}).
+
+\noindent
+Combining with \eqref{eq:hessian-identity}:
+$\|J_{\boxplusn}(u,v)\|^2 = \|w\|^2 - \sum_i \gamma_i
+w^\top H^{(i)} w \le \|w\|^2 = \|u\|^2 + \|v\|^2$.
+
+\subsection{Step 3: Blachman's argument}
+
+Since $\mathcal{J}_n(\alpha)$ is always orthogonal to $\mathbf{1}_n$
+(each pair $(\alpha_i - \alpha_j)^{-1}$ and $(\alpha_j -
+\alpha_i)^{-1}$ cancels in the sum), Proposition~\ref{prop:contraction}
+applies.  Setting $a = 1/\Phin(p)$ and $b = 1/\Phin(q)$ in
+\eqref{eq:jacobian-score} and applying the contraction bound:
+\[
+  (a+b)^2 \Phin(r) \le a^2 \Phin(p) + b^2 \Phin(q)
+  = \frac{1}{\Phin(p)} + \frac{1}{\Phin(q)},
+\]
+which rearranges to $1/\Phin(r) \ge 1/\Phin(p) + 1/\Phin(q)$.
+\hfill$\square$
 
 %======================================================================
-\section{Established Results}
-\label{sec:proved}
+\section{The \texttt{af} Automated Attempt}
+\label{sec:af}
 %======================================================================
 
-The following results have been proved rigorously (some with two independent
-proofs from separate approaches).
+The adversarial proof framework (\texttt{af}) system attacked this
+problem across two independent campaigns (designated ``examples6'' and
+``examples7'') involving over 25 AI prover and verifier agents, 63
+Python scripts totalling approximately 28,000 lines of verification
+code, and more than 2,000,000 random numerical trials.  A third
+campaign (``examples8'') synthesized the results into a 24-node hybrid
+proof tree with three independent proof paths.
 
-\subsection{Structural Identities}
+\subsection{What the \texttt{af} proved}
 
-\begin{proposition}[Node 1.1 --- Foundations]
-The following identities hold for all $p \in \Pn$:
 \begin{enumerate}[label=(\roman*)]
-\item $\Phin(p) = 2 \cdot \Sm_2(p)$ where
-  $\Sm_2(p) = \sum_{i < j} \frac{1}{(\lambda_i - \lambda_j)^2}$.
+\item \textbf{Correct conjecture:} The system correctly identified the
+  answer as TRUE, with zero violations in $>2$M numerical trials.
 
-  \emph{Proof:} Direct expansion of $\sum_i H_p(\lambda_i)^2$ using the
-  ``triple identity'' cancellation.  Each cross-term
-  $\frac{1}{(\lambda_i - \lambda_j)(\lambda_i - \lambda_k)}$ with $j \neq k$
-  cancels in pairs, leaving only the squared terms.
-  \hfill\textcolor{proved}{[Proved]}
+\item \textbf{Base cases $n \le 3$:} Two independent algebraic proofs
+  for each of $n=2$ (exact Pythagorean equality on root gaps) and $n=3$
+  (via Cauchy--Schwarz on cumulants, and via subordination quadratic
+  forms).
 
-\item $S_2(p \boxplusn q) = S_2(p) + S_2(q)$ where
-  $S_2(p) = \sum_{i < j} (\lambda_i - \lambda_j)^2$.
+\item \textbf{$n=4$ symmetric case ($e_3=0$):} Proved via strict
+  concavity of a rational function and independently via a key lemma
+  with vanishing third cumulant.
 
-  \emph{Proof:} $S_2$ is a polynomial in the power sums $p_k = \sum_i
-  \lambda_i^k$, specifically $S_2 = n \cdot p_2 - p_1^2$.  The MSS
-  convolution preserves $p_1$ and satisfies $p_2(r) = p_2(p) + p_2(q) -
-  p_1(p)^2/n - p_1(q)^2/n + (p_1(p) + p_1(q))^2/n$.
-  \hfill\textcolor{proved}{[Proved]}
-
-\item $\sum_{i=1}^n H_p(\lambda_i) \cdot \lambda_i = \frac{n(n-1)}{2}$.
-  \hfill\textcolor{proved}{[Proved]}
-
-\item The Fisher information of the Gaussian polynomial $G_t$ satisfies
-  $C_n := 1/(t \cdot \Phin(G_t)) = \frac{4}{n^2(n-1)}$, verified for
-  $n = 2, \ldots, 14$.
-  \hfill\textcolor{proved}{[Proved]}
+\item \textbf{Structural identities:}
+  $\Phin(p) = 2\sum_{i<j}(\lambda_i - \lambda_j)^{-2}$;
+  $S_2$-additivity $S_2(p \boxplusn q) = S_2(p) + S_2(q)$; the
+  Gaussian splitting identity; the chain rule $H_r(\nu_k) =
+  H_p(\lambda_{\sigma(k)}) - \alpha_k$ conditional on subordination.
 \end{enumerate}
-\end{proposition}
 
-\subsection{Base Cases}
+\subsection{Path A: Subordination + $L^2$ Contraction}
 
-\begin{proposition}[Node 1.2 --- Base cases]
-\label{prop:base}
-Conjecture~\ref{conj:main} holds for the following cases:
-\begin{enumerate}[label=(\roman*)]
-\item \textbf{$n = 1$:} Vacuous ($\Phin(p) = 0$ trivially).
-
-\item \textbf{$n = 2$:} Exact equality.  If $p(x) = (x - a)(x - b)$ and
-  $q(x) = (x - c)(x - d)$, then $\Phin(p) = 2/(b-a)^2$,
-  $\Phin(q) = 2/(d-c)^2$, and the convolution $r = p \boxplusn q$ has root gap
-  $\sqrt{(b-a)^2 + (d-c)^2}$, giving
-  \[
-    \frac{1}{\Phin(r)} = \frac{(b-a)^2 + (d-c)^2}{2}
-    = \frac{1}{\Phin(p)} + \frac{1}{\Phin(q)}.
-  \]
-  This is a Pythagorean identity on root gaps.
-  \hfill\textcolor{proved}{[Proved]}
-
-\item \textbf{$n = 3$:} Proved algebraically via two independent methods.
-  The first proof (subordination approach) constructs the positive definite
-  quadratic form in $(F_p, F_q)$ with 56/56 verification checks passing.
-  The second proof (cumulant approach) uses Cauchy--Schwarz on
-  $\kappa_3^2 / \kappa_2^2$.
-  \hfill\textcolor{proved}{[Proved, 2 independent proofs]}
-
-\item \textbf{$n = 4$, symmetric case ($e_3 = 0$):} Proved via strict
-  concavity of $\phi(t) = t(1 - 4t)/(1 + 12t)$ and also independently
-  via the $\kappa_3 = 0$ key lemma with Cauchy--Schwarz.
-  \hfill\textcolor{proved}{[Proved, 2 independent proofs]}
-\end{enumerate}
-\end{proposition}
-
-\subsection{Additional Proved Components}
-
-\begin{proposition}[Gaussian splitting identity --- Node 1.4.4]
-For any $p, q \in \Pn$ and $s, t \ge 0$:
-\[
-  (p \boxplusn G_s) \boxplusn (q \boxplusn G_t)
-  = (p \boxplusn q) \boxplusn G_{s+t}.
-\]
-This follows from associativity and commutativity of $\boxplusn$ together
-with $G_s \boxplusn G_t = G_{s+t}$ (Gaussian cumulants are additive).
-\hfill\textcolor{proved}{[Proved]}
-\end{proposition}
-
-\begin{proposition}[Chain rule at roots --- Node 1.3.2]
-\label{prop:chain}
-Assuming finite subordination (Lemma~\ref{lem:subord}), at each root
-$\nu_k$ of $r = p \boxplusn q$:
-\begin{enumerate}[label=(\alph*)]
-\item $\omega_p(\nu_k) = \lambda_{\sigma(k)}$ for a bijection $\sigma$,
-\item $\omega_p'(\nu_k) = 1$,
-\item $H_r(\nu_k) = H_p(\lambda_{\sigma(k)}) - \alpha_k$ where
-  $\alpha_k = \tfrac{1}{2}\omega_p''(\nu_k)$.
-\end{enumerate}
-\hfill\textcolor{proved}{[Proved via implicit differentiation]}
-\end{proposition}
-
-\begin{proposition}[De Bruijn identity --- Node 1.4.1]
-\label{prop:debruijn}
-Along the Gaussian smoothing $p_t = p \boxplusn G_t$:
-\[
-  \frac{dS}{dt} = \Phin(p_t),
-\]
-where $S(p) = \sum_{i < j} \log|\lambda_i - \lambda_j|$ is the
-log-Vandermonde entropy.
-\hfill\textcolor{admitted}{[Validated numerically, rigorous proof pending]}
-\end{proposition}
-
-%======================================================================
-\section{Proof Architecture}
-\label{sec:architecture}
-%======================================================================
-
-The adversarial proof tree consists of 24 nodes organized into a root
-conjecture, foundations, base cases, and three independent proof paths.
-Any one of the three paths, combined with the base cases, yields the full
-conjecture.
-
-\subsection{Overview}
-
-\begin{center}
-\begin{tikzpicture}[
-  every node/.style={draw, rounded corners, minimum width=2.8cm,
-    minimum height=0.7cm, font=\small, align=center},
-  level 1/.style={sibling distance=4cm, level distance=1.8cm},
-  level 2/.style={sibling distance=3.5cm, level distance=1.6cm},
-  edge from parent/.style={draw, -Stealth},
-  proved_node/.style={fill=green!15},
-  pending_node/.style={fill=yellow!15},
-  admitted_node/.style={fill=blue!10},
-]
-\node[pending_node] {1: Conjecture}
-  child { node[admitted_node] {1.1: Foundations} }
-  child { node[admitted_node] {1.2: Base Cases\\$n \le 4$} }
-  child { node[pending_node] {1.3: Path A\\Subordination} }
-  child { node[pending_node] {1.4: Path B\\De Bruijn} }
-  child { node[pending_node] {1.5: Path C\\EPI} }
-  child { node[pending_node] {1.6: QED} };
-\end{tikzpicture}
-\end{center}
-
-\subsection{Node Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Epistemic State} & \textbf{Count} & \textbf{Meaning} \\
-\midrule
-\textcolor{pending}{Pending} & 19 & Awaiting proof \\
-\textcolor{admitted}{Admitted} & 5 & Accepted (proved in archive) \\
-\textcolor{proved}{Validated} & 0 & Adversarially verified \\
-\textcolor{refuted}{Refuted} & 0 & Disproved \\
-Archived & 0 & Abandoned \\
-\midrule
-\textbf{Total} & \textbf{24} & \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-%======================================================================
-\section{Path A: Finite Subordination + $L^2$ Contraction}
-\label{sec:pathA}
-%======================================================================
-
-This path adapts the Shlyakhtenko--Tao \cite{ST20} analytic proof of
-free Fisher monotonicity to the finite polynomial setting.
-
-\subsection{Strategy}
-
+This path adapted the Shlyakhtenko--Tao \cite{ST20} continuum proof.
+The plan was:
 \begin{enumerate}
-\item \textbf{Subordination (Node 1.3.1):} Construct rational Herglotz
-  functions $\omega_p, \omega_q : \C^+ \to \C^+$ such that
-  \[
-    G_r(z) = G_p(\omega_p(z)) = G_q(\omega_q(z)).
-  \]
-
-\item \textbf{Chain rule (Node 1.3.2):} Use $\omega_p'(\nu_k) = 1$ to
-  decompose $h = u - \alpha$ where $u_k = H_p(\lambda_{\sigma(k)})$,
-  $h_k = H_r(\nu_k)$, $\alpha_k = \tfrac{1}{2}\omega_p''(\nu_k)$.
-
-\item \textbf{$L^2$ Pythagoras (Node 1.3.3):} Expand
-  \[
-    \Phin(p) = \norm{u}^2 = \norm{h}^2 + 2\ip{h}{\alpha} + \norm{\alpha}^2
-    = \Phin(r) + J_p,
-  \]
-  where $J_p = 2\ip{h}{\alpha} + \norm{\alpha}^2 \ge 0$ is the Fisher
-  decrease.  Similarly $J_q = \Phin(q) - \Phin(r) \ge 0$.
-
-\item \textbf{Herglotz coupling (Node 1.3.4, \textcolor{pending}{KEY HARD
-  STEP}):} Prove
-  \begin{equation}
-  \label{eq:coupling}
-    J_p \cdot J_q \ge \norm{h}^4.
-  \end{equation}
-
-\item \textbf{Conclusion (Node 1.3.5):} From \eqref{eq:coupling}:
-  $(\Phin(p) - \Phin(r))(\Phin(q) - \Phin(r)) \ge \Phin(r)^2$, which
-  rearranges to $1/\Phin(r) \ge 1/\Phin(p) + 1/\Phin(q)$.
+\item Construct finite subordination functions $\omega_p, \omega_q$
+  with $G_r(z) = G_p(\omega_p(z)) = G_q(\omega_q(z))$.
+\item Use the chain rule to decompose $\Phin(p) = \Phin(r) + J_p$ where
+  $J_p \ge 0$ is the Fisher decrease.
+\item Prove the ``Herglotz coupling lemma'' $J_p \cdot J_q \ge
+  \|\mathcal{J}_n(\gamma)\|^4$, from which Stam follows by AM--GM.
 \end{enumerate}
 
-\subsection{Key Hard Step: Subordination Existence (Node 1.3.1)}
+\textbf{Where it stalled:} The existence of finite subordination
+(Node~1.3.1) was verified numerically for $n=2,3,4,5$ but not proved.
+More critically, the continuum identity $\omega_p(z) + \omega_q(z) =
+z + 1/(nG_r(z))$ was shown to be \emph{false} at finite $n$ (verified
+at $n=2$), blocking the coupling argument.  The Herglotz coupling lemma
+(Node~1.3.4) remained open: expressing the Fisher decreases as
+quadratic forms in Herglotz residues was attempted but the coupling
+constraint between $\omega_p$ and $\omega_q$ could not be formulated
+without the continuum summation identity.
 
-\begin{lemma}[Finite subordination --- Unproved]
-\label{lem:subord}
-Let $p, q \in \Pn$ and $r = p \boxplusn q$.  There exist rational functions
-$\omega_p, \omega_q : \hat{\C} \to \hat{\C}$ of degree $n - 1$ satisfying:
-\begin{enumerate}[label=(\alph*)]
-\item $G_r(z) = G_p(\omega_p(z)) = G_q(\omega_q(z))$ as rational identities;
-\item $\omega_p, \omega_q : \C^+ \to \C^+$ (Herglotz property);
-\item $\omega_p(z) = z + O(1)$ as $z \to \infty$.
-\end{enumerate}
-\end{lemma}
+\subsection{Path B: De Bruijn + $1/\Phin$ Concavity}
 
-\noindent\textbf{Proposed construction:} Fix $z \in \C^+$.  The equation
-$G_p(w) = G_r(z)$ is a degree-$(n-1)$ polynomial equation in~$w$.
-Generically there are $n - 1$ solutions.  The selection principle argues
-that exactly one preimage lies in $\C^+$ (via a winding-number argument
-using the interlacing structure of poles and zeros of $G_p$ on $\R$).
-
-\noindent\textbf{Status:} Verified computationally for $n = 2, 3, 4, 5$.
-The winding-number argument requires rigorous verification via the argument
-principle applied to $G_p - c$ on $\C^+$.  An inductive approach via the
-MSS derivative identity $(p \boxplusn q)' = n(p^{(1)} \boxplus_{n-1}
-q^{(1)})$ is also suggested.
-
-\subsection{Key Hard Step: Herglotz Coupling Lemma (Node 1.3.4)}
-
-The correction vectors $\alpha, \beta \in \R^n$ arise from Herglotz
-representations:
-\[
-  \omega_p(z) = z + c_p + \sum_{j=1}^{n-1} \frac{m_j^{(p)}}{z - p_j^{(p)}},
-  \qquad m_j^{(p)} > 0, \; p_j^{(p)} \in \R,
-\]
-giving $\alpha_k = \sum_j m_j^{(p)} / (\nu_k - p_j^{(p)})^3$.  The
-constraint $\omega_p'(\nu_k) = 1$ forces $\sum_j m_j^{(p)} /
-(\nu_k - p_j^{(p)})^2 = 0$ for each~$k$.
-
-\noindent\textbf{Approach:} Express $J_p, J_q$ as quadratic forms in the
-Herglotz residues $\{m_j^{(p)}\}$, $\{m_j^{(q)}\}$.  Use the coupling
-constraint $\omega_p(z) + \omega_q(z) = z + F_r(z)$ (finite subordination
-identity) to constrain the residues jointly, then apply matrix AM--GM.
-
-\noindent\textbf{Status:} \textcolor{pending}{Open}.  The continuum
-summation relation $\omega_1 + \omega_2 = z + 1/(nG_r)$ \emph{does not
-hold} at finite $n$ (verified at $n = 2$), so a finite-$n$ replacement is
-required.
-
-%======================================================================
-\section{Path B: De Bruijn Identity + $1/\Phin$ Concavity}
-\label{sec:pathB}
-%======================================================================
-
-This path follows the classical Costa--Villani \cite{Costa85} entropy
-power template.
-
-\subsection{Strategy}
-
+This path followed the Costa--Villani entropy power template:
 \begin{enumerate}
-\item \textbf{De Bruijn identity (Node 1.4.1):} Establish
-  $dS/dt = \Phin(p_t)$ where $p_t = p \boxplusn G_t$ and
-  $S = \sum_{i<j} \log|\lambda_i - \lambda_j|$.
-
-\item \textbf{$1/\Phin$ concavity (Node 1.4.2, \textcolor{pending}{KEY HARD
-  STEP}):} Prove $\frac{d^2}{dt^2}\bigl(1/\Phin(p_t)\bigr) \le 0$,
-  equivalently $\Phin \cdot \Phin'' \ge 2(\Phin')^2$.
-
-\item \textbf{Gaussian splitting (Node 1.4.4):} Use the proved identity
-  $(p \boxplusn G_s) \boxplusn (q \boxplusn G_t)
-  = (p \boxplusn q) \boxplusn G_{s+t}$.
-
-\item \textbf{Stam from concavity (Node 1.4.3):} Define
-  $\phi(t) = 1/\Phin(p \boxplusn G_t)$.  Concavity plus the Gaussian
-  splitting identity, following Costa--Villani, yields the Stam inequality
-  in the limit $s, t \to 0$.
+\item Establish the de Bruijn identity $dS/dt = \Phin(p_t)$ along the
+  heat flow $p_t = p \boxplusn G_t$.
+\item Prove concavity of $1/\Phin(p_t)$ in $t$
+  (equivalently $\Phin \cdot \Phin'' \ge 2(\Phin')^2$).
+\item Derive Stam from concavity + Gaussian splitting.
 \end{enumerate}
 
-\subsection{Key Hard Step: $1/\Phin$ Concavity (Node 1.4.2)}
+\textbf{Where it stalled:} The concavity claim (Node~1.4.2) was
+numerically validated (0 violations in 590 trials) but the required
+inequality $\Phin \cdot \Phin'' \ge 2(\Phin')^2$, when expanded in
+terms of root dynamics, involved power sums $\sum_{i \neq j}(\lambda_i
+- \lambda_j)^{-k}$ of arbitrarily high order.  A Cauchy--Schwarz
+argument was proposed but never completed for general $n$.
 
-\noindent\textbf{Root dynamics:} Under Gaussian smoothing, the roots
-evolve via Dyson Brownian motion drift:
-\[
-  \frac{d\lambda_i}{dt} = H_{p_t}(\lambda_i)
-  = \sum_{j \neq i} \frac{1}{\lambda_i - \lambda_j}.
-\]
-Using $\Phin = 2 \cdot \Sm_2$, one can express $\Phin'$ and $\Phin''$ in
-terms of power sums $\sum_{i \neq j} (\lambda_i - \lambda_j)^{-k}$.  The
-target inequality $\Phin \cdot \Phin'' \ge 2(\Phin')^2$ should follow
-from a Cauchy--Schwarz inequality on these power sums.
+\subsection{Path C: Finite Entropy Power Inequality}
 
-\noindent\textbf{Status:} \textcolor{pending}{Open}.  Numerically validated
-(0 violations in 590 trials).  Identified as the most computationally
-tractable of the three key hard steps.
+The most speculative path aimed to prove $N(p \boxplusn q) \ge N(p) +
+N(q)$ where $N(p) = \exp(2S(p)/\binom{n}{2})$ is the entropy power,
+and derive Stam by differentiation.  Approaches via the
+Harish-Chandra--Itzykson--Zuber formula and Brascamp--Lieb inequality
+were proposed but not developed.  Numerical support was strong (0
+violations in 13,770 trials).
 
-%======================================================================
-\section{Path C: Entropy Power Inequality}
-\label{sec:pathC}
-%======================================================================
+\subsection{Exhausted approaches}
 
-This path is independent of Paths A and B.
-
-\subsection{Strategy}
-
-\begin{enumerate}
-\item \textbf{Finite free EPI (Node 1.5.1, \textcolor{pending}{KEY HARD
-  STEP}):} Prove
-  \[
-    N(p \boxplusn q) \ge N(p) + N(q),
-  \]
-  where $S(p) = \sum_{i < j} \log|\lambda_i - \lambda_j|$,
-  $m = \binom{n}{2}$, and $N(p) = \exp(2S(p)/m)$ is the entropy power.
-
-\item \textbf{EPI-to-Stam reduction (Node 1.5.3):} Differentiate the EPI
-  along the heat flow using the de Bruijn identity and Gaussian splitting
-  to recover the Stam inequality.
-\end{enumerate}
-
-\subsection{Proposed Approaches}
-
+The \texttt{af} system systematically identified and refuted several
+false leads:
 \begin{itemize}
-\item \textbf{Via log-concavity of MSS (Node 1.5.2):} The MSS convolution
-  arises from $r = \mathbb{E}_U[\chi_{A + UBU^*}]$ where $U$ is
-  Haar-distributed on $U(n)$.  By the Harish-Chandra--Itzykson--Zuber
-  (HCIZ) formula, the density involves the Vandermonde determinant.
-  If log-concavity of this density can be established, the EPI follows
-  from the Pr{\'e}kopa--Leindler inequality.
-
-\item \textbf{Via Brascamp--Lieb (Node 1.5.4):} The Brascamp--Lieb
-  inequality on the unitary group may directly yield the EPI using the
-  MSS structure as an expectation over Haar measure.
-\end{itemize}
-
-\noindent\textbf{Status:} \textcolor{pending}{Open}.  Numerically the
-strongest evidence: 0 violations in 13{,}770 trials.  Equality verified
-analytically for $n = 2$.
-
-%======================================================================
-\section{What Did Not Work: Exhausted Approaches}
-\label{sec:failed}
-%======================================================================
-
-A critical contribution of this investigation is the identification of
-natural-seeming approaches that \emph{fail}, saving future effort.  These
-were discovered across two independent proof campaigns (examples6:
-subordination, examples7: cumulant/heat flow) involving 25+ AI prover
-and verifier agents.
-
-\subsection{Disproved Conjectures}
-
-\begin{longtable}{@{}p{4.5cm}p{2.5cm}p{6cm}@{}}
-\toprule
-\textbf{Conjecture} & \textbf{Source} & \textbf{Finding} \\
-\midrule
-\endhead
-$\ip{h}{\alpha} \ge 0$ (inner product of correction with Hilbert transform is non-negative)
-  & ex6, Session 129
-  & \textcolor{refuted}{\textbf{FALSE.}} Counterexamples at $n \ge 3$ with
-    $\sim$0.3--1\% violation rate.  While $J_p = 2\ip{h}{\alpha} +
-    \norm{\alpha}^2 \ge 0$ always holds, the individual inner product
-    term can be negative. \\[4pt]
-
-Partition of unity: $\omega_p'(z) + \omega_q'(z) = 1$
-  & ex6
-  & \textcolor{refuted}{\textbf{FALSE.}} The correct result is that each
-    $\omega_p'(\nu_k) = 1$ \emph{independently}, not that the derivatives
-    partition unity.  This is a crucial distinction from the continuum
-    setting. \\[4pt]
-
-Shape factor $\mathrm{SF}(r) \le \min(\mathrm{SF}(p), \mathrm{SF}(q))$
-  & ex6
-  & \textcolor{refuted}{\textbf{FALSE.}} 42.7\% violation rate in random
-    trials. \\[4pt]
-
-Monotone gap along heat flow
-  & ex7, Session 132
-  & \textcolor{refuted}{\textbf{FALSE.}} 44\% violation rate.
-    Definitively refuted by dedicated verifier agent. \\[4pt]
-
-Joint concavity of $-R_4$
-  & ex7
-  & \textcolor{refuted}{\textbf{FALSE.}} Hessian is indefinite. \\[4pt]
-
-Continuum summation $\omega_1 + \omega_2 = z + 1/(nG_r)$
-  & ex6, \S5.4
-  & \textcolor{refuted}{\textbf{FALSE}} at finite $n$.  Verified
-    computationally at $n = 2$: the difference
-    $\omega_1 + \omega_2 - z - 1/(nG_r)$ is a nontrivial irrational
-    function. \\
-\bottomrule
-\end{longtable}
-
-\subsection{Exhausted Methods}
-
-\begin{longtable}{@{}p{4.5cm}p{2.5cm}p{6cm}@{}}
-\toprule
-\textbf{Method} & \textbf{Source} & \textbf{Outcome} \\
-\midrule
-\endhead
-SOS (sum of squares) on gap numerator
-  & ex7
-  & Mixed-sign cross terms prevent SOS decomposition for $n \ge 4$. \\[4pt]
-
-Coefficient additivity for $n \ge 4$
-  & ex6
-  & Cross terms in $g_k$ for $k \ge 4$ destroy additivity. \\[4pt]
-
-AM--GM from $A + B \ge 2\Phin(r)$
-  & ex6
-  & Wrong direction; the bound goes the wrong way. \\[4pt]
-
-Perspective function approach
-  & ex7
-  & Blocked by non-convexity of the relevant functional. \\[4pt]
-
-General polynomial manipulation for $n \ge 4$
-  & Both
-  & Exhausted by 4+ prover agents.  The combinatorial complexity of the
-    MSS formula at $n \ge 4$ makes direct symbolic manipulation
-    intractable. \\
-\bottomrule
-\end{longtable}
-
-\subsection{Lessons Learned}
-
-\begin{enumerate}
-\item \textbf{Finite $\neq$ continuum:} Many identities from the
-  continuum free probability theory (subordination summation, partition
-  of unity, monotone gap) fail at finite~$n$.  Proofs must be genuinely
-  finite-dimensional.
-
-\item \textbf{Base cases are deceptive:} The $n = 2$ case reduces to
-  Pythagoras and gives exact equality; $n = 3$ admits a direct algebraic
-  proof.  Both suggest the conjecture should be easy, but $n \ge 4$
-  requires fundamentally different tools.
-
-\item \textbf{Structural identities are valuable:} The identity
-  $\Phin = 2 \cdot \Sm_2$ and $S_2$ additivity were key breakthroughs
-  that simplified the problem and enabled the heat flow approach.
-
-\item \textbf{Numerical falsification is efficient:} Several
-  plausible-sounding conjectures were quickly killed by targeted numerical
-  testing, saving substantial proof effort.
-\end{enumerate}
-
-%======================================================================
-\section{Full Proof Tree}
-\label{sec:tree}
-%======================================================================
-
-The complete proof tree as exported from the adversarial proof framework
-(\texttt{af}) is reproduced below.  Status indicators:
-\textcolor{admitted}{\textbf{A}} = admitted,
-\textcolor{pending}{\textbf{P}} = pending.
-
-\medskip
-
-\noindent\textbf{Node 1} [\textcolor{pending}{P}]:
-\emph{Main conjecture} --- $1/\Phin(p \boxplusn q) \ge 1/\Phin(p) +
-1/\Phin(q)$ for all $p, q \in \Pn$, $n \ge 2$.
-
-\begin{itemize}[leftmargin=1.5em]
-\item \textbf{1.1} [\textcolor{admitted}{A}]: \emph{Foundations.}
-  Definitions, MSS formula, cumulant additivity, $\Phin = 2\Sm_2$,
-  $S_2$ additivity, $\sum H_i \lambda_i = n(n-1)/2$,
-  $C_n = 4/(n^2(n-1))$.  All proved.
-
-\item \textbf{1.2} [\textcolor{admitted}{A}]: \emph{Base cases.}
-  $n = 1$ vacuous; $n = 2$ equality; $n = 3$ proved (2 proofs);
-  $n = 4$ symmetric proved (2 proofs).  2M+ numerical trials.
-
-\item \textbf{1.3} [\textcolor{pending}{P}]: \emph{Path A:
-  Subordination + $L^2$ contraction.}
-  \begin{itemize}[leftmargin=1.5em]
-  \item \textbf{1.3.1} [\textcolor{pending}{P}]: Finite subordination
-    existence.
-  \item \textbf{1.3.2} [\textcolor{admitted}{A}]: Chain rule at roots
-    ($\omega_p'(\nu_k) = 1$).
-  \item \textbf{1.3.3} [\textcolor{admitted}{A}]: $L^2$ Pythagoras
-    decomposition.
-  \item \textbf{1.3.4} [\textcolor{pending}{P}]: \textbf{Herglotz
-    coupling lemma (KEY).}
-    \begin{itemize}[leftmargin=1.5em]
-    \item \textbf{1.3.4.1} [\textcolor{pending}{P}]: Herglotz
-      representation of $\omega_p$.
-    \item \textbf{1.3.4.2} [\textcolor{pending}{P}]: Coupling
-      constraint $\omega_p + \omega_q = z + F_r$.
-    \item \textbf{1.3.4.3} [\textcolor{pending}{P}]: Cauchy--Schwarz
-      on coupled quadratic forms.
-    \item \textbf{1.3.4.4} [\textcolor{pending}{P}]: Closing the
-      bound via Cauchy matrix structure.
-    \end{itemize}
-  \item \textbf{1.3.5} [\textcolor{pending}{P}]: Harmonic mean from
-    coupling $\Rightarrow$ QED.
-  \end{itemize}
-
-\item \textbf{1.4} [\textcolor{pending}{P}]: \emph{Path B:
-  De Bruijn + $1/\Phin$ concavity.}
-  \begin{itemize}[leftmargin=1.5em]
-  \item \textbf{1.4.1} [\textcolor{pending}{P}]: De Bruijn identity
-    (rigorous).
-  \item \textbf{1.4.2} [\textcolor{pending}{P}]: \textbf{$1/\Phin$
-    concavity along heat flow (KEY).}
-  \item \textbf{1.4.3} [\textcolor{pending}{P}]: Stam from concavity +
-    splitting.
-  \item \textbf{1.4.4} [\textcolor{admitted}{A}]: Gaussian splitting
-    (proved).
-  \end{itemize}
-
-\item \textbf{1.5} [\textcolor{pending}{P}]: \emph{Path C: Entropy
-  power inequality.}
-  \begin{itemize}[leftmargin=1.5em]
-  \item \textbf{1.5.1} [\textcolor{pending}{P}]: \textbf{Finite free
-    EPI (KEY).}
-  \item \textbf{1.5.2} [\textcolor{pending}{P}]: EPI via log-concavity
-    of MSS.
-  \item \textbf{1.5.3} [\textcolor{pending}{P}]: EPI-to-Stam reduction.
-  \item \textbf{1.5.4} [\textcolor{pending}{P}]: Alternative via
-    Brascamp--Lieb.
-  \end{itemize}
-
-\item \textbf{1.6} [\textcolor{pending}{P}]: \emph{QED:} Base cases +
-  any one path $\Rightarrow$ full conjecture.
+\item $\ip{\mathcal{J}_n(\gamma)}{\alpha} \ge 0$: FALSE (counterexamples
+  at $n \ge 3$).
+\item Partition of unity $\omega_p'(z) + \omega_q'(z) = 1$: FALSE
+  (each derivative equals 1 independently at the roots, not summing to 1).
+\item Continuum summation $\omega_p + \omega_q = z + 1/(nG_r)$: FALSE
+  at finite $n$.
+\item Shape factor monotonicity: FALSE (42.7\% violation rate).
+\item Monotone gap along heat flow: FALSE (44\% violation rate).
+\item Joint concavity of $-R_4$: FALSE (indefinite Hessian).
+\item SOS decomposition for $n \ge 4$: FAILS (mixed-sign cross terms).
 \end{itemize}
 
 %======================================================================
-\section{Recommended Next Steps}
-\label{sec:next}
+\section{Critical Comparison}
+\label{sec:comparison}
 %======================================================================
 
-Based on the analysis, the recommended priority ordering for further work
-is:
+\subsection{Did any \texttt{af} path overlap with the successful approach?}
 
-\begin{enumerate}
-\item \textbf{Node 1.4.2} ($1/\Phin$ concavity): Most computationally
-  tractable.  All ingredients available (Dyson dynamics, $\Phin = 2\Sm_2$).
-  Requires computing $\Phin'$, $\Phin''$ explicitly and establishing a
-  Cauchy--Schwarz structure.
-
-\item \textbf{Node 1.3.1} (Subordination existence): Unlocks all of
-  Path~A.  Approach via Rouch{\'e}'s theorem or induction on $n$ using the
-  MSS derivative identity.  References: Biane (1998), Belinschi--Bercovici
-  (2007).
-
-\item \textbf{Node 1.5.1--1.5.2} (Finite free EPI): Independent of
-  Paths A and B.  Strongest numerical support (13{,}770 trials).
-  Approach via HCIZ formula + Pr{\'e}kopa--Leindler.
-
-\item \textbf{Node 1.3.4} (Herglotz coupling): Conditional on 1.3.1.
-  May be as hard as the original conjecture in different language.
-
-\item \textbf{Node 1.4.3} (Stam from concavity): Routine given 1.4.2,
-  following the classical Costa--Villani template.
-\end{enumerate}
-
-%======================================================================
-\section{Archive and Provenance}
-\label{sec:archive}
-%======================================================================
-
-The investigation produced a substantial archive preserved in
-\texttt{problem04/archive/}:
+The official proof is structurally closest to Path~A (subordination/
+$L^2$ contraction), but uses fundamentally different tools at the
+critical step.  We can align the proofs as follows:
 
 \begin{center}
-\begin{tabular}{@{}lrl@{}}
+\begin{tabular}{@{}p{5.8cm}p{5.8cm}@{}}
 \toprule
-\textbf{Directory} & \textbf{Files} & \textbf{Description} \\
+\textbf{Official proof} & \textbf{\texttt{af} Path A} \\
 \midrule
-\texttt{examples6/} & 434 & Subordination approach \\
-\texttt{examples7/} & 238 & Cumulant/heat flow approach \\
-\texttt{examples8\_canonical/} & --- & Hybrid tree backup \\
-\texttt{problem04\_original/} & --- & Original 1-node tree \\
-\midrule
-\textbf{Total Python} & 63 & $\sim$28{,}000 lines of verification code \\
+Score vectors as heat flow derivatives & Chain rule at roots
+  (Node~1.3.2) \\
+Jacobian relates score vectors via \eqref{eq:jacobian-score} &
+  Subordination $\omega_p, \omega_q$ relates score vectors
+  (Node~1.3.2) \\
+Jacobian contraction on $\mathcal{V}$ (Prop.~\ref{prop:contraction}) &
+  Herglotz coupling lemma $J_p \cdot J_q \ge \norm{h}^4$
+  (Node~1.3.4) \\
+Blachman's choice of $a,b$ to conclude & Harmonic mean from coupling
+  (Node~1.3.5) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\noindent The canonical proof tree synthesizes both approaches into a
-24-node hybrid structure with 14 external references linking to proved
-results.
+Both proofs express the Stam inequality through a contraction/monotonicity
+property of the map relating input and output score vectors.  The
+\texttt{af} formulated this as a multiplicative coupling between Fisher
+decreases ($J_p \cdot J_q \ge \norm{h}^4$), while the official proof
+formulates it as an $L^2$ contraction of the Jacobian.  Both ultimately
+reduce to Blachman's classical trick of choosing parameters
+$a = 1/\Phin(p)$, $b = 1/\Phin(q)$.
+
+However, the technical mechanism for establishing the contraction is
+entirely different:
+\begin{itemize}
+\item The \texttt{af} attempted to work through subordination functions
+  and their Herglotz representations, trying to express everything in
+  terms of the residues and poles of $\omega_p, \omega_q$.  This is a
+  complex-analytic approach.
+\item The official proof works entirely in real variables: the Jacobian
+  $J_{\boxplusn}$ is a real matrix, and its contraction property follows
+  from variance additivity (a second-moment identity) and convexity of
+  eigenvalue partial sums for hyperbolic polynomials (a result from
+  convex algebraic geometry).
+\end{itemize}
+
+\subsection{The key insight the \texttt{af} missed}
+
+The crucial insight of the official proof is the \emph{Hessian identity}
+\eqref{eq:hessian-identity}, which converts the contraction question
+into a positive-semidefiniteness question about weighted Hessians.
+This identity has two remarkable features:
+
+\begin{enumerate}
+\item \textbf{Variance additivity as the engine.}  The fact that
+  $\Var(\gamma) = \Var(\alpha) + \Var(\beta)$ under finite free
+  convolution is a well-known, elementary property.  The official proof
+  differentiates this identity \emph{twice} along perturbations in the
+  mean-zero subspace to extract a Hessian identity.  The \texttt{af}
+  system \emph{did know} this identity---it proved $S_2$-additivity
+  (which is equivalent to variance additivity up to centering) as
+  Node~1.1(ii).  But it never considered differentiating it to obtain
+  information about the Jacobian.
+
+\item \textbf{Hyperbolic polynomial convexity.}  The positive
+  semidefiniteness of $\sum_i \gamma_i H^{(i)}_{\boxplusn}$ follows from
+  the theorem of Bauschke et al.\ \cite{BGLS01} on convexity of partial
+  sums of roots of hyperbolic polynomials.  This is a result from convex
+  algebraic geometry that is not standard in the free probability
+  literature.  The connection arises because the MSS convolution formula
+  $\sum_{\pi \in S_n} \prod_i(x - a_i - b_{\pi(i)})$ is manifestly a
+  hyperbolic polynomial in $x$ (it has only real roots by Walsh's
+  theorem).  The \texttt{af} system never considered the convolution
+  polynomial as a hyperbolic polynomial or invoked results from that
+  theory.
+\end{enumerate}
+
+In summary, the \texttt{af} missed the interaction between two ideas it
+partially possessed: (a) variance additivity (which it proved) and (b)
+the structure of the convolution as a sum over permutations (which it
+used for computations).  The official proof's innovation is to connect
+these through the Jacobian and Hessian, then resolve the sign question
+via hyperbolic polynomial theory.
+
+\subsection{The \texttt{af}'s three paths in light of the solution}
+
+\paragraph{Path A (Subordination).} This is the closest to the official
+approach at the strategic level (both use a contraction/decomposition of
+score vectors), but the \texttt{af} chose to route through subordination
+functions---a complex-analytic detour that introduces unnecessary
+difficulties.  The official proof avoids subordination entirely.  The
+existence of finite subordination functions remains unproved and appears
+to be a genuinely hard problem in its own right.  By going through the
+Jacobian of the root map directly, the official proof sidesteps this
+entirely.
+
+\paragraph{Path B (De Bruijn/Concavity).} The concavity of $1/\Phin$
+along the heat flow is a stronger statement than the Stam inequality
+itself.  While the numerical evidence is compelling, no proof for
+general $n$ was found.  The official proof does not use heat flow
+concavity at all; it is a direct algebraic/geometric argument.  Path~B
+remains potentially viable as an alternative approach, but it requires
+establishing a strictly stronger result than necessary.
+
+\paragraph{Path C (EPI).}  The finite entropy power inequality $N(p
+\boxplusn q) \ge N(p) + N(q)$ is also a strictly stronger conjecture
+than the Stam inequality.  The official proof does not address it.
+Whether the finite EPI is true remains open.  If true, it would be a
+deeper result requiring different techniques.
+
+%======================================================================
+\section{Evaluation of Dead Ends}
+\label{sec:deadends}
+%======================================================================
+
+\subsection{Genuine dead ends a mathematician would also encounter}
+
+Several of the \texttt{af}'s dead ends reflect traps that a human
+mathematician working from the free probability literature would also
+naturally fall into:
+
+\begin{enumerate}
+\item \textbf{Continuum identities failing at finite $n$.}  The
+  identities $\omega_p + \omega_q = z + 1/(nG_r)$ and $\omega_p'(z) +
+  \omega_q'(z) = 1$ are \emph{true} in the large-$n$ limit (they are
+  Voiculescu's subordination identities for free convolution).  A
+  mathematician familiar with free probability would naturally try to
+  use these and would discover they fail at finite $n$.  The
+  \texttt{af}'s discovery that each $\omega_p'(\nu_k) = 1$
+  independently (rather than a partition of unity) is a genuine
+  mathematical observation that clarifies the finite-$n$ structure.
+
+\item \textbf{SOS failure for $n \ge 4$.}  Attempting a sum-of-squares
+  proof is a standard approach for polynomial inequalities.  The failure
+  of SOS for $n \ge 4$ reflects the genuine algebraic complexity of the
+  problem: the inequality is not a consequence of any simple polynomial
+  identity.
+
+\item \textbf{Direct polynomial manipulation at $n \ge 4$.}  The
+  combinatorial explosion of the MSS formula at $n=4$ (24 terms in $S_4$)
+  makes brute-force approaches genuinely intractable.  A human
+  mathematician would also find this route prohibitive.
+
+\item \textbf{Subordination existence.}  Constructing finite
+  subordination functions is an open problem that several researchers
+  have considered.  The \texttt{af}'s difficulty here is shared with the
+  human mathematical community.
+\end{enumerate}
+
+\subsection{Dead ends specific to the AI approach}
+
+\begin{enumerate}
+\item \textbf{Excessive reliance on the continuum template.}  The
+  \texttt{af} organized all three proof paths as finite analogues of
+  known continuum results (Shlyakhtenko--Tao, Costa--Villani,
+  Shannon EPI).  A human mathematician might also start here, but
+  would more quickly recognize the need for genuinely finite-dimensional
+  tools.  The official proof, while inspired by Blachman's argument,
+  introduces fundamentally new ideas (the Hessian identity from variance
+  additivity, hyperbolic polynomial convexity) that have no direct
+  continuum analogue.
+
+\item \textbf{Not exploiting the permutation formula.}  The \texttt{af}
+  used the MSS coefficient formula for computations but never exploited
+  the permutation formula $\sum_{\pi \in S_n} \prod_i(x - \alpha_i -
+  \beta_{\pi(i)})$ structurally.  The official proof recognizes this as
+  defining a hyperbolic polynomial in the $(x, \alpha, \beta)$
+  variables, which is the entry point for the Bauschke et al.\ convexity
+  theorem.
+
+\item \textbf{Searching for coupling constraints instead of convexity.}
+  In Path~A, the \texttt{af} tried to find algebraic constraints between
+  $\omega_p$ and $\omega_q$ to force the coupling inequality.  The
+  official proof obtains the needed bound not from coupling but from
+  \emph{convexity}---specifically, convexity of eigenvalue sums, which
+  is a property of the convolution map itself, not of any auxiliary
+  objects.
+\end{enumerate}
+
+%======================================================================
+\section{What the \texttt{af} Got Right}
+\label{sec:right}
+%======================================================================
+
+Despite failing to find the complete proof, the \texttt{af} system
+demonstrated several strengths:
+
+\begin{enumerate}
+\item \textbf{Correct answer.}  The conjecture is indeed true, and
+  the system correctly identified this with overwhelming numerical
+  evidence ($>2$M trials, zero violations).
+
+\item \textbf{Valid base cases.}  The proofs for $n=2$ (Pythagorean
+  identity) and $n=3$ (two independent proofs) are correct and
+  non-trivial.  The symmetric $n=4$ case was also proved.
+
+\item \textbf{Structural identities.}  The identities $\Phin =
+  2\sum_{i<j}(\lambda_i - \lambda_j)^{-2}$ and $S_2$-additivity are
+  both used (implicitly) in the official proof.  The official proof's
+  variance additivity (Proposition~1.1(i)) is essentially the
+  $S_2$-additivity that the \texttt{af} proved.
+
+\item \textbf{Blachman's argument was anticipated.}  The \texttt{af}'s
+  Path~A strategy of decomposing $\Phin(p) = \Phin(r) + J_p$ and then
+  using $J_p \cdot J_q \ge \Phin(r)^2$ is algebraically equivalent to
+  Blachman's argument.  The system recognized this structure as the
+  classical template.
+
+\item \textbf{Identifying the true difficulty.}  The system correctly
+  identified that the hard step is establishing a contraction or
+  coupling property for general $n \ge 4$.  All three paths isolated
+  a single hard lemma whose resolution would complete the proof.
+
+\item \textbf{Efficient falsification.}  Numerical testing quickly
+  eliminated 6+ false conjectures (inner product non-negativity, shape
+  factor monotonicity, partition of unity, etc.), preventing wasted
+  effort.  This is a genuine strength of the computational approach.
+
+\item \textbf{Score vectors and heat flow.}  The \texttt{af} identified
+  the score vector $\mathcal{J}_n(\alpha)$ and its connection to heat
+  flow derivatives.  This is precisely Lemma~1.1 of the official proof.
+  The \texttt{af}'s de Bruijn identity $dS/dt = \Phin(p_t)$ is the
+  integral form of the same observation.
+\end{enumerate}
+
+%======================================================================
+\section{Lessons for AI Approaches to Inequality Proofs}
+\label{sec:lessons}
+%======================================================================
+
+\subsection{The template trap}
+
+The \texttt{af} system organized its attack entirely around three
+templates from the continuum setting: the subordination proof
+(Shlyakhtenko--Tao), the concavity proof (Costa--Villani), and the
+entropy power proof (Shannon--Stam).  Each template guided the
+discovery of useful partial results, but none yielded the final proof.
+The official proof uses a template (Blachman's argument) but supplies a
+genuinely new technical ingredient (hyperbolic polynomial convexity)
+that does not appear in any continuum analogue.
+
+\emph{Lesson:} Templates from analogous problems are valuable for
+structure, but solving genuinely new problems requires connecting to
+tools outside the template's domain.  An AI system needs the ability
+to search across mathematical subfields for applicable results.
+
+\subsection{The abstraction barrier at $n \ge 4$}
+
+All three \texttt{af} paths proved $n \le 3$ using direct computation
+and failed at $n \ge 4$ because the combinatorial complexity overwhelms
+algebraic manipulation.  The official proof succeeds at general $n$
+because it works at the level of the Jacobian and Hessian---objects that
+exist for all $n$ and whose properties can be established uniformly.
+
+\emph{Lesson:} For inequality proofs that must hold for all $n$, the key
+is often to find the right \emph{abstraction} that makes the proof
+$n$-independent.  Direct computation on specific-degree instances,
+while useful for building intuition, cannot substitute for finding the
+right structural viewpoint.
+
+\subsection{Known results as hidden tools}
+
+The \texttt{af} proved $S_2$-additivity and knew the permutation formula
+for $\boxplusn$, but never combined them into the Hessian identity
+\eqref{eq:hessian-identity} or recognized the connection to hyperbolic
+polynomial theory.  The Bauschke et al.\ theorem \cite{BGLS01} is a
+published result from 2001, but it lives in the convex analysis
+literature rather than the free probability literature.
+
+\emph{Lesson:} The bottleneck in mathematical proof is often not proving
+new results but recognizing which \emph{existing} results are relevant.
+AI systems would benefit from broader literature search capabilities
+and mechanisms for recognizing structural analogies across subfields.
+
+\subsection{The value of the Jacobian viewpoint}
+
+The \texttt{af} system worked with subordination functions
+$\omega_p, \omega_q$ as the intermediary between input and output score
+vectors.  The official proof works directly with the Jacobian of the
+root map $\Omega_{\boxplusn}$.  The Jacobian is a more elementary and
+more powerful object: it is a real matrix that can be analyzed with
+linear algebra, rather than a complex-analytic function requiring
+Herglotz representations.
+
+\emph{Lesson:} When a problem involves a smooth map between
+finite-dimensional spaces, the Jacobian is often the most natural
+analytical tool.  The \texttt{af} introduced auxiliary complex-analytic
+objects (subordination functions) that, while natural from the free
+probability perspective, added unnecessary complexity.
+
+\subsection{Numerical evidence: strengths and limitations}
+
+The \texttt{af}'s numerical testing was a clear strength---it
+correctly predicted the truth of the conjecture and efficiently
+eliminated false leads.  However, numerical evidence also gave
+confidence in subsidiary conjectures (concavity of $1/\Phin$, finite
+EPI) that turned out to be unnecessary for the proof.
+
+\emph{Lesson:} Numerical validation is excellent for falsification
+(disproving wrong conjectures) and for building confidence in the
+main claim, but it can lead to overinvestment in strong-but-unnecessary
+auxiliary conjectures.  The official proof succeeds with a weaker
+intermediate statement (Jacobian contraction) than any of the three
+intermediate conjectures pursued by \texttt{af}.
+
+\subsection{Comparison with the ChatGPT Pro~5.2 attempt}
+
+The problem authors' commentary \cite{GVSSproof} notes that
+ChatGPT Pro~5.2 also attempted this problem and tried Blachman's
+approach via the random matrix model $r(x) = \mathbb{E}\det(xI - A -
+UBU^\top)$.  That attempt failed because: (a) it only considered the
+score function of $r(x)$ without mentioning those of $p(x)$ and $q(x)$;
+(b) it did not exploit the preservation of real roots; (c) it asserted
+incorrect residue calculus facts.
+
+The \texttt{af} system avoided these specific errors: it worked with
+all three score vectors simultaneously, it knew real-rootedness was
+essential, and its algebraic computations were verified.  However, like
+ChatGPT Pro~5.2, the \texttt{af} was unable to identify the correct
+technical tool (hyperbolic polynomial convexity) for the key step.
+Both AI systems demonstrate that current LLMs can organize proof
+strategies and verify computations, but struggle to make the creative
+leap of connecting a problem to an unexpected area of mathematics.
 
 %======================================================================
 \section{Conclusion}
 \label{sec:conclusion}
 %======================================================================
 
-The finite free Stam inequality (Conjecture~\ref{conj:main}) remains open
-for general $n \ge 4$, despite strong numerical evidence and significant
-structural progress.  The investigation has:
-
+The finite free Stam inequality admits a complete proof of approximately
+four pages, using:
 \begin{itemize}
-\item Proved the conjecture for $n \le 3$ (with two independent proofs)
-  and for $n = 4$ in the symmetric case;
-\item Established key structural identities ($\Phin = 2\Sm_2$,
-  $S_2$ additivity, Gaussian splitting, chain rule);
-\item Identified three viable proof paths (subordination, concavity, EPI),
-  each requiring exactly one hard lemma;
-\item Eliminated numerous false leads, providing a clear map of the
-  problem landscape.
+\item the connection between score vectors and heat flow derivatives,
+\item variance additivity for finite free convolution,
+\item convexity of eigenvalue partial sums for hyperbolic polynomials
+  \cite{BGLS01},
+\item Blachman's classical optimization trick.
 \end{itemize}
 
-\noindent The conjecture is likely true.  The most promising avenue appears
-to be Path~B (de Bruijn + concavity), as it is the most computationally
-concrete and has the fewest unresolved prerequisites.
+The \texttt{af} system's investigation, while not reaching a complete
+proof, produced substantial partial results: correct base cases,
+important structural identities, efficient elimination of false leads,
+and a clear mapping of the proof landscape through three viable
+strategies.  The system's principal failure was not recognizing that
+variance additivity---a fact it had already proved---could be
+differentiated to yield information about the Jacobian, and that the
+permutation formula for $\boxplusn$ gives a hyperbolic polynomial whose
+eigenvalue convexity properties close the argument.
+
+This case study illustrates both the current capabilities and
+limitations of AI-assisted mathematical reasoning: strong on
+computation, verification, and systematic exploration of known
+frameworks; weak on cross-domain insight and the creative recognition of
+how elementary known facts can be combined in unexpected ways.
 
 \begin{thebibliography}{99}
 
-\bibitem{MSS15}
-A.~Marcus, D.~A.~Spielman, and N.~Srivastava,
-\emph{Interlacing families II: Mixed characteristic polynomials and the
-Kadison--Singer problem},
-Ann.\ Math.\ \textbf{182} (2015), 327--350.
+\bibitem{GVSSproof}
+J.~Garza Vargas, N.~Srivastava, and Z.~Stier,
+\emph{The finite free Stam inequality},
+in: First Proof Solutions and Comments, February 2026.
+
+\bibitem{BGLS01}
+H.~H.~Bauschke, O.~G\"uler, A.~S.~Lewis, and H.~S.~Sendov,
+\emph{Hyperbolic polynomials and convex analysis},
+Canad.\ J.\ Math.\ \textbf{53} (2001), 470--488.
+
+\bibitem{Bla65}
+N.~M.~Blachman,
+\emph{The convolution inequality for entropy powers},
+IEEE Trans.\ Inform.\ Theory \textbf{11} (1965), 267--271.
+
+\bibitem{MSS22}
+A.~W.~Marcus, D.~A.~Spielman, and N.~Srivastava,
+\emph{Finite free convolutions of polynomials},
+Probab.\ Theory Related Fields \textbf{182} (2022), 807--848.
 
 \bibitem{V98}
 D.~Voiculescu,
-\emph{The analogues of entropy and of Fisher's information measure in free
-probability theory V: Noncommutative Hilbert transforms},
+\emph{The analogues of entropy and of Fisher's information measure in
+free probability theory V},
 Invent.\ Math.\ \textbf{132} (1998), 189--227.
 
 \bibitem{ST20}
 D.~Shlyakhtenko and T.~Tao,
-\emph{A self-contained analytic proof of the free monotonicity of the free
-Fisher information},
+\emph{A self-contained analytic proof of the free monotonicity of the
+free Fisher information},
 arXiv:2009.01882, 2020.
-
-\bibitem{AP18}
-O.~Arizmendi and D.~Perales,
-\emph{Finite free convolutions of polynomials},
-arXiv:1807.08958, 2018.
-
-\bibitem{ALOV19}
-N.~Anari, K.~Liu, S.~Oveis Gharan, and C.~Vinzant,
-\emph{Log-concave polynomials II: High-dimensional walks and an FPRAS for
-counting bases of a matroid},
-Ann.\ Math.\ \textbf{199} (2024), 259--299.
 
 \bibitem{Costa85}
 M.~H.~M.~Costa,
 \emph{A new entropy power inequality},
 IEEE Trans.\ Inform.\ Theory \textbf{31} (1985), 751--760.
 
-\bibitem{Grib19}
-E.~Gribinski,
-\emph{Entropy monotonicity for finite free convolution},
-arXiv:1907.12826, 2019.
+\bibitem{Wal22}
+J.~L.~Walsh,
+\emph{On the location of the roots of certain types of polynomials},
+Trans.\ Amer.\ Math.\ Soc.\ \textbf{24} (1922), 163--180.
 
-\bibitem{BB07}
-S.~T.~Belinschi and H.~Bercovici,
-\emph{A new approach to subordination results in free probability},
-J.\ Anal.\ Math.\ \textbf{101} (2007), 357--365.
+\bibitem{Nui68}
+W.~Nuij,
+\emph{A note on hyperbolic polynomials},
+Math.\ Scand.\ \textbf{23} (1968), 69--72.
 
 \end{thebibliography}
 

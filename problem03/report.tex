@@ -9,12 +9,7 @@
 \usepackage{mathtools}
 \usepackage{enumitem}
 \usepackage{booktabs}
-\usepackage{array}
-\usepackage{longtable}
-\usepackage{xcolor}
 \usepackage{hyperref}
-\usepackage{tikz}
-\usetikzlibrary{trees,arrows.meta,positioning}
 
 % --- Theorem environments ---
 \newtheorem{theorem}{Theorem}[section]
@@ -28,21 +23,15 @@
 
 % --- Macros ---
 \newcommand{\Sn}{S_n(\lambda)}
-\newcommand{\PushTASEP}{$t$-PushTASEP}
-\DeclareMathOperator{\Ind}{Ind}
-
-% --- Colors for status ---
-\definecolor{proved}{RGB}{0,128,0}
-\definecolor{pending}{RGB}{200,150,0}
-\definecolor{refuted}{RGB}{200,0,0}
-\definecolor{archived}{RGB}{128,128,128}
-\definecolor{critical}{RGB}{180,0,0}
-\definecolor{resolved}{RGB}{0,100,180}
+\newcommand{\PushTASEP}{\mbox{$t$-PushTASEP}}
+\DeclareMathOperator{\wt}{wt}
 
 % --- Title ---
-\title{\textbf{Report on Problem~3: Markov Chain with\\ASEP Polynomial Stationary Distribution}\\[6pt]
-\large Adversarial Proof Framework Analysis}
-\author{Generated from the \texttt{af} proof workspace\\
+\title{\textbf{Critical Comparison: Automated \texttt{af} Proof Attempt\\
+vs.\ Official Solution for Problem~3}\\[6pt]
+\large First Proof Benchmark --- Markov Chain with\\
+ASEP Polynomial Stationary Distribution}
+\author{Comparative Analysis Report\\
 First Proof Project}
 \date{February 2026}
 
@@ -50,13 +39,21 @@ First Proof Project}
 \maketitle
 
 \begin{abstract}
-This report documents the adversarial proof investigation of Problem~3 from the First Proof paper (posed by Lauren Williams): whether there exists a \emph{nontrivial} Markov chain on the set of compositions $\Sn$ of a restricted partition~$\lambda$ whose stationary distribution is given by the ratio of interpolation ASEP polynomials $F^*_\mu / P^*_\lambda$ at $q = 1$.
-The answer is \textbf{YES}: the inhomogeneous multispecies \PushTASEP\ provides such a chain.
-Over three adversarial sessions, we have constructed a 9-node proof tree.
-All 97 challenges raised in Session~2 were resolved in Session~3 via complete rewrites of all 8 leaf nodes.
-Currently, 0 nodes are validated, 9 are pending, and 0 challenges remain open.
-The proof is ready for a second verification wave.
-The main mathematical risk resides in Node~1.6 (the ratio identity), whose ``Hecke stationarity transfer'' argument is a plausible but nontrivial original claim; all other nodes are built on standard machinery and published results.
+Problem~3 of the First Proof benchmark (posed by Lauren Williams) asks
+whether there exists a \emph{nontrivial} Markov chain on the set of
+compositions $\Sn$ of a restricted partition $\lambda$ whose stationary
+distribution is the ratio $F^*_\mu / P^*_\lambda$ of interpolation ASEP
+to interpolation Macdonald polynomials at $q=1$. The official solution,
+by Ben Dali and Williams, constructs the \emph{interpolation}
+\PushTASEP{} --- a modification of the ordinary \PushTASEP{} with a new
+``Step~2'' reinsertion phase governed by site-dependent probabilities
+$\mathfrak{p}_k$ and $\mathfrak{q}_k$. The automated \texttt{af} proof
+attempt also answered YES, but proposed the \emph{ordinary}
+(inhomogeneous multispecies) \PushTASEP{} of Ayyer--Martin--Williams as
+the Markov chain, and attempted to bridge the gap via a ``ratio
+identity'' $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$. This report
+critically compares the two approaches, evaluating what the \texttt{af}
+attempt got right and what it missed.
 \end{abstract}
 
 \tableofcontents
@@ -67,709 +64,616 @@ The main mathematical risk resides in Node~1.6 (the ratio identity), whose ``Hec
 \label{sec:problem}
 %======================================================================
 
-\subsection{Setup}
-
-The problem, posed by Lauren Williams (Harvard University), lies in algebraic combinatorics at the interface of Macdonald polynomial theory and interacting particle systems.
-
-\begin{definition}[Restricted partition]
-Let $\lambda = (\lambda_1 > \lambda_2 > \cdots > \lambda_n \ge 0)$ be a partition with distinct parts.  We say $\lambda$ is \emph{restricted} if it has a unique part of size~$0$ and no part of size~$1$.
-\end{definition}
-
-\begin{definition}[State space and polynomials]
-Let $\Sn$ denote the set of all compositions $\mu = (\mu_1, \ldots, \mu_n)$ that are permutations of the parts of~$\lambda$.
-For $\mu \in \Sn$, define:
-\begin{itemize}
-\item $F^*_\mu(x_1, \ldots, x_n;\, q, t)$: the \emph{interpolation ASEP polynomial} (BDW25 Definition~1.2/1.14);
-\item $P^*_\lambda(x_1, \ldots, x_n;\, q, t)$: the \emph{interpolation Macdonald polynomial} (BDW25 Proposition~2.15).
-\end{itemize}
-\end{definition}
-
-\subsection{The Question}
+Let $\lambda = (\lambda_1 > \cdots > \lambda_n \ge 0)$ be a partition
+with distinct parts that is \emph{restricted} (unique part 0, no part
+1). Let $\Sn$ be the set of compositions that are permutations of the
+parts of $\lambda$. For $\mu \in \Sn$, let $F^*_\mu(x_1,\ldots,x_n;
+q,t)$ be the interpolation ASEP polynomial and
+$P^*_\lambda(x_1,\ldots,x_n; q,t)$ the interpolation Macdonald
+polynomial.
 
 \begin{conjecture}[Williams]
-\label{conj:main}
-Does there exist a \emph{nontrivial} Markov chain on $\Sn$ whose stationary distribution is
+Does there exist a nontrivial Markov chain on $\Sn$ whose stationary
+distribution is
 \[
-  \pi(\mu) \;=\; \frac{F^*_\mu(x_1, \ldots, x_n;\, q{=}1,\, t)}{P^*_\lambda(x_1, \ldots, x_n;\, q{=}1,\, t)}
+  \pi(\mu) = \frac{F^*_\mu(x_1,\ldots,x_n;\, q{=}1,\, t)}
+                   {P^*_\lambda(x_1,\ldots,x_n;\, q{=}1,\, t)}
   \qquad \text{for } \mu \in \Sn,
 \]
-where ``nontrivial'' means the transition probabilities are \emph{not} described using the polynomials $F^*_\mu$?
+where ``nontrivial'' means the transition probabilities are not
+described using the polynomials $F^*_\mu$?
 \end{conjecture}
 
-\noindent\textbf{Answer: YES.}  The inhomogeneous multispecies \PushTASEP\ on a ring with $n$ sites, site parameters $x_1, \ldots, x_n > 0$, and pushing parameter $t \in (0,1)$ provides such a chain.
+The answer is YES. Both the official solution and the \texttt{af}
+attempt agree on this. They disagree, however, on which Markov chain
+achieves this stationary distribution and how to prove it.
 
-\subsection{Why This Is Interesting}
 
-Several features make this problem non-trivial:
+%======================================================================
+\section{The Official Solution (Ben Dali--Williams)}
+\label{sec:official}
+%======================================================================
+
+\subsection{The Interpolation \PushTASEP{}}
+
+The official solution constructs a \emph{new} Markov chain: the
+\textbf{interpolation \PushTASEP{}} with content $\lambda$. This is
+\emph{not} the same as the ordinary \PushTASEP{} of
+Ayyer--Martin--Williams~\cite{AMW25}. It is a three-step process on
+configurations $\mu \in \Sn$, viewed as particles on a ring:
+
+\begin{enumerate}[label=\textbf{(Step \arabic*)}]
+\item[\textbf{(Step 0)}] A position $j$ is selected with probability
+  $P_j$ proportional to a product involving
+  $(x_k - t^{-(n-2)})$ and $(x_k - t^{-(n-1)})$ factors.
+
+\item[\textbf{(Step 1)}] The particle at position $j$ (label $a$) is
+  activated and travels clockwise, displacing weaker particles via the
+  standard \PushTASEP{} geometric rule: with probability
+  $t^{k-1}/[m]_t$ it moves to the $k$-th of the $m$ weaker particles.
+  The cascade continues until a vacancy is reached. Position $j$
+  becomes vacant.
+
+\item[\textbf{(Step 2)}] The vacancy at position $j$ (now labeled
+  $a := 0$) travels to position~1 and proceeds clockwise through
+  positions $1, \ldots, j-1$, interacting with each particle $b$ at
+  site $k$ via site-dependent probabilities:
+  \[
+    \mathfrak{p}_k = \frac{t^{-n+1}(1-t)}{x_k - t^{-n+2}}, \qquad
+    \mathfrak{q}_k = \frac{(1-t)\,x_k}{x_k - t^{-n+2}}.
+  \]
+  The vacancy either skips or displaces each particle it encounters,
+  with probabilities depending on the relative labels.
+\end{enumerate}
+
+The key innovation is Step~2: a reinsertion phase that has no analogue
+in the ordinary \PushTASEP. This step is what makes the chain's
+stationary distribution involve \emph{interpolation} polynomials rather
+than the homogeneous ones.
+
+\subsection{Key Ideas in the Proof}
+
+The proof of Theorem~2.2 (that the stationary probability of $\mu$ is
+$F^*_\mu / P^*_\lambda$) proceeds through several stages:
+
 \begin{enumerate}
-\item The interpolation ASEP polynomials $F^*_\mu$ are \emph{inhomogeneous} polynomials containing lower-degree correction terms; they are \emph{not} the same as the homogeneous ASEP polynomials $f_\mu$ whose stationarity is established by Ayyer--Martin--Williams (AMW24).
-\item The bridge from the homogeneous ratio $f_\mu / P_\lambda$ (known to be a stationary distribution) to the interpolation ratio $F^*_\mu / P^*_\lambda$ requires a nontrivial \emph{ratio identity}, which is the crux of the proof.
-\item The ``nontriviality'' condition asks that the chain is not merely the trivial i.i.d.\ sampler that draws each state from $\pi$ independently of the current state.
-\item The \PushTASEP\ is a long-range interacting particle system with geometric displacement cascades, not a nearest-neighbor chain, making its analysis intrinsically more complex than classical TASEP.
+\item \textbf{Two-line queue encoding (Proposition~3.6).} Step~2 of the
+  interpolation \PushTASEP{} is encoded by \emph{unsigned two-line
+  queues} $\bar{Q} \in \bar{\mathcal{G}}^\rho_\nu$. The weight of
+  $\bar{Q}$ (defined via ball weights and pairing weights) divided by a
+  normalizing product equals the transition probability
+  $\mathbb{P}_j^{(2)}(\rho, \nu)$.
+
+\item \textbf{Signed-to-unsigned reduction (Lemma~3.2).} Signed
+  two-line queues from~\cite{BDW25} are related to the unsigned versions
+  by summing over all sign assignments. The sign cancellations produce
+  the ball weights in Equation~(6) of the official solution.
+
+\item \textbf{Factorization via Corollary~3.5.} Using the strong
+  factorization property of interpolation Macdonald polynomials at
+  $q=1$ (from Do\l{}{\k{e}}ga~\cite{Dol17} and~\cite{BDW25}), the
+  authors establish:
+  \[
+    F^*_\rho(\mathbf{x}; 1, t) = F^*_\eta(\mathbf{x}; 1, t) \cdot
+    e^*_k(\mathbf{x}; t),
+  \]
+  where $\eta = \rho^-$ (parts decremented by 1) and $k$ is the number
+  of nonzero parts. This uses Theorem~3.4, an interpolation analogue of
+  \cite[Theorem~4.18]{AMW25}.
+
+\item \textbf{Stationarity via balance equation (Proposition~3.7).}
+  Combining \cite[Lemma~5.4]{AMW25} (for Step~1 transition
+  probabilities) with Proposition~3.6 (for Step~2), the full transition
+  probability decomposes as
+  \[
+    \mathbb{P}(\mu, \nu) = \sum_{\rho \in \Sn}
+    \frac{a^\mu_\rho \, c^\rho_\nu}{e^*_{n-1}}.
+  \]
+  Then from the expansion $F^*_\nu = \sum_\eta F^{*\eta}_\nu \cdot
+  F^*_{\eta^-}$ (from \cite[Theorem~1.15 and Lemma~5.6]{BDW25}) and
+  Corollary~3.5, one obtains:
+  \[
+    F^*_\nu(\mathbf{x}; 1, t) = \sum_{\eta} F^*_\eta(\mathbf{x}; 1, t)
+    \cdot \mathbb{P}(\eta, \nu),
+  \]
+  proving that $(F^*_\mu)_\mu$ is a left eigenvector of the transition
+  matrix with eigenvalue~1.
 \end{enumerate}
 
 
 %======================================================================
-\section{Proof Strategy}
-\label{sec:strategy}
+\section{The \texttt{af} Automated Proof Attempt}
+\label{sec:af}
 %======================================================================
 
-The proof decomposes into eight nodes (plus a root), organized in a linear dependency chain:
+\subsection{Overview}
+
+The \texttt{af} attempt over three adversarial sessions produced a
+9-node proof tree (root plus 8 children). It answered YES and proposed
+the \textbf{ordinary} (inhomogeneous multispecies) \PushTASEP{} of
+Ayyer--Martin--Williams~\cite{AMW25} as the Markov chain.
+
+The proof strategy was:
+\begin{enumerate}
+\item \textbf{Node~1.1:} Define the state space $\Sn$.
+\item \textbf{Node~1.2:} Establish notation and the relationship between
+  interpolation polynomials $f^*_\mu$ and homogeneous polynomials
+  $f_\mu$.
+\item \textbf{Node~1.4:} Construct the ordinary \PushTASEP.
+\item \textbf{Node~1.5:} Cite AMW24 Theorem~1.1 that the ordinary
+  \PushTASEP{} has stationary distribution $f_\mu / P_\lambda$.
+\item \textbf{Node~1.6 (Crux):} Establish the ``ratio identity''
+  $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$.
+\item \textbf{Node~1.3:} Derive positivity and normalization as a
+  corollary.
+\item \textbf{Node~1.7:} Prove nontriviality via a sparsity argument.
+\item \textbf{Node~1.8:} Conclude.
+\end{enumerate}
+
+\subsection{The Ratio Identity (Node~1.6)}
+
+The crux of the \texttt{af} attempt is the claim that for all $\mu \in
+\Sn$:
+\begin{equation}
+\label{eq:ratio}
+  \frac{f^*_\mu(\mathbf{x}; 1, t)}{P^*_\lambda(\mathbf{x}; 1, t)}
+  = \frac{f_\mu(\mathbf{x}; 1, t)}{P_\lambda(\mathbf{x}; 1, t)}.
+\end{equation}
+The proposed proof had three steps:
+\begin{enumerate}
+\item Both $f^*_\mu$ and $f_\mu$ satisfy the same Hecke relations
+  (BDW25 Proposition~2.10).
+\item The AMW24 balance equation proof for $f_\mu$ ``transfers'' to
+  $f^*_\mu$ because it uses only these Hecke relations.
+\item Perron--Frobenius uniqueness forces proportionality:
+  $f^*_\mu = C \cdot f_\mu$ for a constant $C$ independent of $\mu$.
+\end{enumerate}
+
+\subsection{Session History}
+
+The \texttt{af} attempt went through three sessions:
+\begin{itemize}
+\item \textbf{Session~1:} Proof tree registration (no verification).
+\item \textbf{Session~2:} Adversarial verification raised 97 challenges
+  (36 critical, 49 major, 12 minor). Five systemic problems were
+  identified: wrong arXiv reference, fabricated Ferrari--Martin proof
+  method, logical fallacy in Node~1.6, circular dependency, and notation
+  inconsistency.
+\item \textbf{Session~3:} All 8 leaf nodes were rewritten, resolving all
+  97 challenges. Node~1.6 was completely rewritten with the three-step
+  Hecke argument. Node~1.3 was restructured as a corollary. No further
+  verification was performed.
+\end{itemize}
+
+The proof tree ended with 9 pending nodes, 0 validated, 0 refuted, and 0
+open challenges.
+
+
+%======================================================================
+\section{Critical Comparison}
+\label{sec:comparison}
+%======================================================================
+
+\subsection{The Fundamental Difference: Which Markov Chain?}
+
+The most significant difference between the two approaches is the choice
+of Markov chain:
+
+\begin{center}
+\begin{tabular}{@{}p{3cm}p{5cm}p{5cm}@{}}
+\toprule
+& \textbf{Official Solution} & \textbf{\texttt{af} Attempt} \\
+\midrule
+Markov chain & Interpolation \PushTASEP{} & Ordinary \PushTASEP{} \\
+Dynamics & Steps 0 + 1 + 2 (novel Step~2) & Standard \PushTASEP{} \\
+Stationary dist.\ & $F^*_\mu / P^*_\lambda$ directly & $f_\mu / P_\lambda$ (then ratio identity) \\
+Key novelty & New chain with reinsertion & Ratio identity \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The official solution constructs a \emph{genuinely different} Markov
+chain whose stationary distribution is \emph{directly} $F^*_\mu /
+P^*_\lambda$, without needing to pass through the homogeneous
+polynomials. The \texttt{af} attempt, by contrast, tried to reuse the
+\emph{same} chain (the ordinary \PushTASEP) and bridge the gap
+algebraically.
+
+This is a crucial distinction. The authors' commentary on AI-generated
+solutions explicitly notes that a common LLM failure mode was ``to
+change the problem to a related but different, and already-solved
+problem, namely, to replace interpolation ASEP and interpolation
+Macdonald polynomials by ASEP and Macdonald polynomials. In this case
+the solution to this problem is the \PushTASEP{} and was given in a
+paper by Ayyer, Martin, and Williams.'' The \texttt{af} attempt falls
+squarely into this category.
+
+\subsection{Is the Ratio Identity True?}
+
+The \texttt{af} attempt's entire strategy depends on the ratio identity
+\eqref{eq:ratio}. Does the official solution validate it?
+
+\textbf{Yes, but indirectly.} The official solution's Theorem~3.4
+establishes that
 \[
-  \underbrace{1.1}_{\text{state space}} \;\to\; \underbrace{1.2}_{\text{notation}} \;\to\; \underbrace{1.4}_{\text{chain def}} \;\to\; \underbrace{1.5}_{\text{stationarity}} \;\to\; \underbrace{1.6}_{\text{ratio id}} \;\to\; \underbrace{1.3}_{\text{positivity}} \;\to\; \underbrace{1.7}_{\text{nontriviality}} \;\to\; \underbrace{1.8}_{\text{QED}}
+  \frac{G^*_\eta(\mathbf{x}; t)}{P^*_\lambda(\mathbf{x}; 1, t)}
+  = \frac{F^*_\eta(\mathbf{x}; 1, t)}{P^*_\kappa(\mathbf{x}; 1, t)},
 \]
+where $G^*_\eta = \sum_{\rho: \phi(\rho) = \eta} F^*_\rho$. In the
+special case where $\lambda$ is restricted and $\phi : i \mapsto
+\max(i-1, 0)$, the map $\phi$ is injective on $\Sn$, so $G^*_\eta =
+F^*_\rho$ for a unique $\rho$. This, combined with the factorization
+$P^*_\lambda / P^*_\kappa = e^*_k$ (Corollary~3.5), gives relationships
+between interpolation polynomials at \emph{different} partitions.
 
-\subsection{Node~1.1 --- State Space Setup}
+However, the official solution does \emph{not} establish the ratio
+identity \eqref{eq:ratio} in the form claimed by the \texttt{af}
+attempt (i.e., $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$ at the
+\emph{same} partition $\lambda$). Instead, the official solution avoids
+this identity entirely by constructing a different Markov chain that
+directly has $F^*_\mu / P^*_\lambda$ as its stationary distribution.
 
-Defines $\Sn$ as the set of all $n!$ permutations of $\lambda$, identified with particle configurations on the ring $\mathbb{Z}_n = \{1, \ldots, n\}$ with periodic boundary.  Species labels are $\{0\} \cup \{k \ge 2 : k \in \lambda\}$, with species~$0$ representing the unique vacancy.
+That said, the ratio identity \eqref{eq:ratio} is in fact a
+\emph{consequence} of both solutions being correct: if the ordinary
+\PushTASEP{} has stationary distribution $f_\mu / P_\lambda$ (AMW24
+Theorem~1.1) and the interpolation \PushTASEP{} has stationary
+distribution $F^*_\mu / P^*_\lambda$ (Ben Dali--Williams Theorem~2.2),
+and if the two chains happen to have the \emph{same} stationary
+distribution, then the ratio identity holds. But this would require
+showing that the ordinary \PushTASEP{} and the interpolation
+\PushTASEP{} have the same stationary distribution, which is by no means
+obvious given their different dynamics.
 
-\subsection{Node~1.2 --- Polynomial Identification and Notation}
+\textbf{In summary:} the ratio identity is a nontrivial claim that the
+official solution neither proves nor needs. The \texttt{af} attempt's
+strategy of reducing to this identity was the wrong approach.
 
-Establishes a comprehensive cross-paper notation table (BDW25/AMW24/CMW22).  Key identifications:
-\begin{itemize}
-\item $f^*_\mu := T_{\sigma_\mu} E^*_\lambda$ (BDW25 Definition~1.2, algebraic via Hecke operators);
-\item $F^*_\mu$ (BDW25 Definition~1.14, combinatorial via signed multiline queues);
-\item $f^*_\mu = F^*_\mu$ (BDW25 Theorem~1.15);
-\item $f_\mu$ = top-degree homogeneous component of $f^*_\mu$ (BDW25 Theorem~2.3);
-\item $P^*_\lambda = \sum_{\mu \in \Sn} f^*_\mu$ (BDW25 Proposition~2.15);
-\item At $q = 1$: the $f_\mu(x; 1, t) / P_\lambda(x; 1, t)$ are stationary weights of the \PushTASEP\ (AMW24 Theorem~1.1).
-\end{itemize}
 
-\subsection{Node~1.4 --- Markov Chain Construction}
+\subsection{Did the \texttt{af} Attempt Identify the Right Techniques?}
 
-Defines the inhomogeneous multispecies \PushTASEP\ following AMW24 (arXiv:2403.10485) Definition~2.1:
+\begin{center}
+\begin{tabular}{@{}p{5cm}cc@{}}
+\toprule
+\textbf{Technique} & \textbf{Official} & \textbf{\texttt{af}} \\
+\midrule
+Multiline queues & Central & Mentioned \\
+Signed two-line queues & Central & Not used \\
+Unsigned two-line queues & Central & Not used \\
+Hecke relations (BDW25) & Not used & Central \\
+AMW24 Thm~1.1 & Used (Step~1) & Central \\
+Factorization ($P^*_\lambda$) & Central & Not used \\
+Perron--Frobenius & Not used & Central \\
+BDW25 Thm~1.15 ($f^*=F^*$) & Used & Used \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+The official solution relies heavily on the \emph{combinatorial}
+machinery of two-line queues (both signed and unsigned) and the
+factorization of interpolation Macdonald polynomials. The \texttt{af}
+attempt instead relied on the \emph{algebraic} machinery of Hecke
+operators and Perron--Frobenius uniqueness. These are fundamentally
+different proof strategies.
+
+Notably, the official solution does use AMW24, but only for the Step~1
+transition probabilities (\cite[Lemma~5.4]{AMW25}), not for its
+stationarity theorem. The \texttt{af} attempt treated AMW24 Theorem~1.1
+as the centerpiece, which reflects the misidentification of the Markov
+chain.
+
+
+%======================================================================
+\section{Evaluation of the \texttt{af} Ratio Identity (Node~1.6)}
+\label{sec:node16}
+%======================================================================
+
+The \texttt{af} attempt's Node~1.6 claimed the ratio identity
+\eqref{eq:ratio} via three steps. We evaluate each in light of the
+official solution.
+
+\subsection{Step~1: Hecke Relations}
+
+The claim that both $f^*_\mu$ and $f_\mu$ satisfy the same Hecke
+relations (BDW25 Proposition~2.10) is \textbf{correct}. This is a
+published result. However, the official solution does not use Hecke
+relations at all, suggesting they are not the right tool for this
+problem.
+
+\subsection{Step~2: Balance Transfer}
+
+The claim that the AMW24 balance equation proof ``transfers'' from
+$f_\mu$ to $f^*_\mu$ because both satisfy the same Hecke relations is
+\textbf{unverified and likely false as stated}. The argument asserts
+that the AMW24 proof uses \emph{only} the Hecke relations (a)--(c), and
+therefore applies verbatim to $f^*_\mu$.
+
+There are several problems:
 \begin{enumerate}
-\item Each site $i$ has an independent exponential clock with rate $1/x_i$.
-\item When site $i$'s clock rings, the particle there (if not a vacancy) becomes \emph{activated} and scans clockwise for weaker species.
-\item With probability $(1-t)$, it displaces the first weaker species encountered; with probability $t$, it continues scanning (geometric displacement with parameter $t$).
-\item Displaced particles cascade: each displaced particle repeats the scan-and-displace process.
-\item The cascade terminates when a vacancy is displaced.
+\item The AMW24 proof of stationarity is specific to the \emph{ordinary}
+  \PushTASEP. Even if $f^*_\mu$ satisfies the same Hecke relations, the
+  relevant balance equation involves the \emph{transition matrix} of the
+  chain. If the chain is the ordinary \PushTASEP, then
+  $\sum_\mu f^*_\mu \cdot Q_{\mu,\nu} = 0$ would mean that $f^*_\mu$
+  is \emph{also} a stationary measure of the ordinary \PushTASEP. By
+  Perron--Frobenius uniqueness, this would force
+  $f^*_\mu = C \cdot f_\mu$, i.e., the interpolation polynomials are
+  proportional to the homogeneous ones.
+
+\item But $f^*_\mu$ and $f_\mu$ are \emph{not} proportional in general:
+  $f_\mu$ is the top-degree homogeneous component of $f^*_\mu$ (BDW25
+  Theorem~2.3), and $f^*_\mu$ contains lower-degree correction terms.
+  Hence $f^*_\mu \neq C \cdot f_\mu$ for any constant $C$ (unless the
+  lower-degree terms vanish, which they do not in general).
+
+\item This means Step~2 of the \texttt{af} argument is \textbf{false}:
+  the AMW24 proof does \emph{not} transfer from $f_\mu$ to $f^*_\mu$
+  for the ordinary \PushTASEP, because $f^*_\mu$ is not in the left
+  null space of the ordinary \PushTASEP's generator $Q$.
 \end{enumerate}
 
-Irreducibility for $t \in [0, 1)$ follows from AMW24 Proposition~2.4: the $t = 0$ PushTASEP is irreducible, and every $t = 0$ transition occurs with probability $\ge (1-t) > 0$ for $t \in (0,1)$.
+The official solution confirms this diagnosis: a \emph{different} Markov
+chain (the interpolation \PushTASEP, with its additional Step~2) is
+needed to have $F^*_\mu$ as stationary weights. The ordinary
+\PushTASEP{} only gives $f_\mu$ as stationary weights.
 
-A discrete-time chain $P = I + Q/R$ is obtained by uniformization at rate $R = \sum_i 1/x_i$.
+\subsection{Step~3: Perron--Frobenius Uniqueness}
 
-\subsection{Node~1.5 --- Stationarity (AMW24 Theorem~1.1)}
+The Perron--Frobenius argument is \textbf{correct in principle} but is
+applied to a false premise (Step~2). If $f^*_\mu$ were indeed in the
+left null space of the ordinary \PushTASEP's generator, then
+Perron--Frobenius would force proportionality. But since $f^*_\mu$ is
+\emph{not} in that null space, the argument is vacuous.
 
-Cites the main external theorem: the \PushTASEP\ has stationary distribution
-\[
-  \pi_\lambda(\mu) = \frac{f_\mu(x_1, \ldots, x_n;\, 1, t)}{P_\lambda(x_1, \ldots, x_n;\, 1, t)}.
-\]
-The AMW24 proof is \emph{algebraic/combinatorial} (via multiline diagrams and $q = 1$ properties of nonsymmetric Macdonald polynomials), not via a Ferrari--Martin multiline Markov process.
+\subsection{Verdict on Node~1.6}
 
-\subsection{Node~1.6 --- Ratio Identity (CRUX)}
-\label{sec:crux}
-
-\begin{proposition}[Ratio identity]
-For $t \in (0,1)$ and $x_i > 0$:
-\[
-  \frac{f^*_\mu(x;\, 1, t)}{P^*_\lambda(x;\, 1, t)} = \frac{f_\mu(x;\, 1, t)}{P_\lambda(x;\, 1, t)}
-  \qquad \forall\, \mu \in \Sn.
-\]
-\end{proposition}
-
-The proof proceeds in three steps:
-\begin{enumerate}
-\item \textbf{Step 1 (Hecke relations):} Both $f^*_\mu$ and $f_\mu$ satisfy the same Hecke relations (BDW25 Proposition~2.10):
-  \begin{itemize}
-  \item $T_i f^*_\mu = f^*_{s_i\mu}$ when $\mu_i > \mu_{i+1}$;
-  \item $T_i f^*_\mu = t \cdot f^*_\mu$ when $\mu_i = \mu_{i+1}$;
-  \item $T_i f^*_\mu = (t-1) f^*_\mu + t\, f^*_{s_i\mu}$ when $\mu_i < \mu_{i+1}$.
-  \end{itemize}
-\item \textbf{Step 2 (Balance transfer):} The AMW24 proof that $(f_\mu)_\mu$ lies in the left null space of the \PushTASEP\ generator $Q$ uses \emph{only} relations (a)--(c) above.  Since $(f^*_\mu)_\mu$ satisfies the same relations, the same algebraic steps show $(f^*_\mu)_\mu$ also lies in the left null space of $Q$.
-\item \textbf{Step 3 (Perron--Frobenius uniqueness):} The \PushTASEP\ is irreducible (Node~1.4), so $\ker_L(Q)$ is one-dimensional.  Both vectors are proportional: $f^*_\mu = C(x,t) \cdot f_\mu$ for all $\mu$, with $C$ independent of $\mu$.  Dividing by the respective sums gives the ratio identity.
-\end{enumerate}
-
-\textbf{Critical caveat:} Step~2 is the deepest mathematical claim.  BDW25 Remark~1.17 defers the interpolation probabilistic interpretation to a forthcoming paper [BDW], suggesting the experts consider this transfer nontrivial.  BDW25 Theorem~7.1 (factorization) provides an alternative algebraic route.
-
-\subsection{Node~1.3 --- Positivity and Normalization (Corollary)}
-
-Structured as a \emph{corollary} of Nodes 1.5 and 1.6 (breaking the circularity that plagued Session~2):
-\begin{enumerate}
-\item From Node~1.5: $f_\mu(x; 1, t) / P_\lambda(x; 1, t) \ge 0$ with full support and $P_\lambda > 0$.
-\item From Node~1.6: $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$.
-\item Therefore $\pi(\mu) = f^*_\mu / P^*_\lambda$ is a probability distribution with full support and $P^*_\lambda > 0$.
-\end{enumerate}
-
-\subsection{Node~1.7 --- Nontriviality}
-
-Proves the \PushTASEP\ is nontrivial via a \emph{sparsity argument}.  The trivial i.i.d.\ sampler has $P^{\mathrm{triv}}(\mu, \nu) = \pi(\nu) > 0$ for all $\mu, \nu$.  The \PushTASEP\ transition matrix $P^{tP}$ has zero entries: for $n = 3$, $\lambda = (3, 2, 0)$, the configuration $(2, 0, 3)$ is unreachable from $(3, 2, 0)$ in a single step (verified by exhaustive cascade analysis), giving $P^{tP}((3,2,0),(2,0,3)) = 0 \ne \pi((2,0,3)) > 0$.
-
-\subsection{Node~1.8 --- Conclusion}
-
-Synthesizes Nodes~1.1--1.7: the \PushTASEP\ is an irreducible Markov chain on $\Sn$ with stationary distribution $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$, and it is nontrivial.
+The ratio identity as formulated by the \texttt{af} attempt is
+\textbf{false}. The interpolation polynomials $f^*_\mu$ are not
+proportional to the homogeneous polynomials $f_\mu$ (they differ by
+lower-degree terms), and the ordinary \PushTASEP{} does not have
+$f^*_\mu / P^*_\lambda$ as its stationary distribution. The \texttt{af}
+attempt's HANDOFF.md itself flagged this as a ``high risk'' node, and
+this assessment was correct: the node contains a fundamental error.
 
 
 %======================================================================
-\section{Session History}
-\label{sec:sessions}
+\section{What the \texttt{af} Attempt Got Right}
+\label{sec:right}
 %======================================================================
 
-\subsection{Session 1: Proof Tree Registration}
-
-\begin{itemize}
-\item Initialized the \texttt{af} workspace with the root conjecture (Node~1).
-\item Created 8 child nodes (1.1--1.8) covering: state space setup, polynomial identification, positivity/normalization, chain construction, stationarity, ratio identity, nontriviality, and conclusion.
-\item Registered external references (AMW24, BDW25, CMW22, FM07, KS96) and definitions.
-\item \textbf{No verification attempted.}
-\end{itemize}
-
-\subsection{Session 2: First Verification Wave}
-
-\begin{itemize}
-\item \textbf{All 8 leaf nodes verified by adversarial verifiers.}
-\item \textbf{97 challenges raised} across all 8 nodes, broken down as follows:
-\end{itemize}
-
-\begin{center}
-\begin{tabular}{@{}lccccc@{}}
-\toprule
-\textbf{Node} & \textbf{Critical} & \textbf{Major} & \textbf{Minor} & \textbf{Total} \\
-\midrule
-1.1 (state space) & 0 & 4 & 3 & 7 \\
-1.2 (notation) & 2 & 8 & 3 & 13 \\
-1.3 (positivity) & 4 & 6 & 1 & 11 \\
-1.4 (chain construction) & 4 & 10 & 3 & 17 \\
-1.5 (stationarity) & 7 & 10 & 1 & 18 \\
-1.6 (ratio identity) & 11 & 5 & 0 & 16 \\
-1.7 (nontriviality) & 7 & 5 & 1 & 13 \\
-1.8 (conclusion) & 1 & 1 & 0 & 2 \\
-\midrule
-\textbf{Total} & \textbf{36} & \textbf{49} & \textbf{12} & \textbf{97} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent The challenges revealed five systemic problems:
-\begin{enumerate}
-\item \textbf{Wrong AMW24 arXiv reference} --- all nodes cited a nonexistent arXiv number instead of the correct 2403.10485.
-\item \textbf{Node~1.5 fictional proof method} --- incorrectly attributed the stationarity proof to a Ferrari--Martin multiline Markov process construction, which does not exist for the \PushTASEP\ at $t > 0$.
-\item \textbf{Node~1.6 logical fallacy} --- the original argument claimed ``both ratios sum to~1, therefore they are equal,'' which is false.
-\item \textbf{Circular dependency} --- Node~1.3 (positivity) attempted to prove $F^*_\mu \ge 0$ standalone, creating a circular dependency with the ratio identity.
-\item \textbf{Notation inconsistency} --- inconsistent use of $F^*_\mu$ vs.\ $f^*_\mu$ vs.\ $F_\eta$ across nodes.
-\end{enumerate}
-
-\subsection{Session 3: Prover Wave (Complete Rewrites)}
-
-\begin{itemize}
-\item \textbf{All 8 leaf nodes rewritten by independent prover subagents.}
-\item \textbf{All 97 challenges resolved.}
-\item \textbf{0 open challenges remain.}
-\end{itemize}
-
-Key changes per node:
-
-\begin{center}
-\begin{tabular}{@{}lp{9cm}@{}}
-\toprule
-\textbf{Node} & \textbf{Key Changes in Session~3 Rewrite} \\
-\midrule
-1.1 & Precise definitions: ring $\mathbb{Z}_n$, species labels $\{0\} \cup \{k \ge 2\}$, $|\Sn| = n!$ \\
-1.2 & Full notation table (BDW25/AMW24/CMW22), correct arXiv, six numbered claims \\
-1.3 & \textbf{Restructured as corollary} of 1.5 + 1.6; circularity broken \\
-1.4 & Full cascade mechanism, geometric displacement, vacancy behavior, irreducibility, CT$\to$DT bridge \\
-1.5 & \textbf{Complete rewrite}: cites AMW24 Thm~1.1 correctly; algebraic proof method; no Ferrari--Martin fiction \\
-1.6 & \textbf{Complete rewrite}: 3-step Hecke stationarity argument (BDW25 Prop~2.10 + AMW24 Thm~1.1 + Perron--Frobenius) \\
-1.7 & Formal definition of ``nontrivial,'' rigorous sparsity proof with $n=3$ computation \\
-1.8 & Full dependency chain, logical synthesis, parameter domains \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-
-%======================================================================
-\section{Current Status}
-\label{sec:status}
-%======================================================================
-
-\subsection{Node Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Epistemic State} & \textbf{Count} & \textbf{Meaning} \\
-\midrule
-\textcolor{pending}{Pending} & 9 & Awaiting verification \\
-\textcolor{proved}{Validated} & 0 & --- \\
-\textcolor{refuted}{Refuted} & 0 & --- \\
-\textcolor{archived}{Archived} & 0 & --- \\
-\midrule
-\textbf{Total} & \textbf{9} & \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\subsection{Challenge Statistics}
-
-\begin{center}
-\begin{tabular}{@{}lcc@{}}
-\toprule
-\textbf{Metric} & \textbf{Count} \\
-\midrule
-Total challenges filed (Session~2) & 97 \\
-Challenges resolved (Session~3) & 97 \\
-\textbf{Open challenges} & \textbf{0} \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\subsection{Risk Assessment by Node}
-
-\begin{center}
-\begin{tabular}{@{}llcl@{}}
-\toprule
-\textbf{Node} & \textbf{Description} & \textbf{Risk} & \textbf{Rationale} \\
-\midrule
-1.1 & State space setup & \textcolor{proved}{Low} & Standard definitions \\
-1.2 & Polynomial identification & \textcolor{proved}{Low} & Notation; cites published results \\
-1.3 & Positivity (corollary) & \textcolor{proved}{Low} & Follows from 1.5 + 1.6 \\
-1.4 & Chain construction & \textcolor{pending}{Medium} & Cascade details may need verification \\
-1.5 & Stationarity (AMW24) & \textcolor{pending}{Medium} & External theorem citation \\
-1.6 & Ratio identity (CRUX) & \textcolor{refuted}{High} & Step~2 (Hecke transfer) is nontrivial \\
-1.7 & Nontriviality & \textcolor{proved}{Low} & Concrete sparsity computation \\
-1.8 & Conclusion & \textcolor{proved}{Low} & Synthesis node \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-
-%======================================================================
-\section{Assessment of Correctness}
-\label{sec:assessment}
-%======================================================================
-
-\subsection{What Is Secure}
-
-\begin{itemize}
-\item \textbf{Node~1.1 (state space):} Standard combinatorial setup.  The definition of $\Sn$ as the set of $n!$ permutations of a restricted partition is unambiguous.
-\item \textbf{Node~1.2 (notation):} Cross-paper notation table is now comprehensive and internally consistent.  All six claims are direct citations from BDW25/AMW24/CMW22.
-\item \textbf{Node~1.4 (chain construction):} The \PushTASEP\ dynamics follow AMW24 Definition~2.1 verbatim.  Irreducibility via the $t = 0$ reduction is standard.  The CT$\to$DT uniformization bridge is textbook.
-\item \textbf{Node~1.5 (stationarity):} AMW24 Theorem~1.1 is a published result with a complete proof.  The node correctly attributes the algebraic/combinatorial proof method.
-\item \textbf{Node~1.7 (nontriviality):} The explicit $n = 3$, $\lambda = (3,2,0)$ computation is verifiable by hand.  The sparsity argument is watertight.
-\item \textbf{Node~1.3 (positivity):} As a corollary of 1.5 + 1.6, the logic is clean: once the ratio identity is established, positivity and normalization follow immediately.
-\end{itemize}
-
-\subsection{What Requires Scrutiny}
-
-\begin{itemize}
-\item \textbf{Node~1.6, Step~2 (Hecke stationarity transfer):} This is the \emph{deepest mathematical claim} in the proof.  It asserts that the AMW24 balance equation proof for $f_\mu$ transfers to $f^*_\mu$ because both satisfy the same Hecke relations (BDW25 Proposition~2.10).  A fully rigorous verification requires confirming that the AMW24 multiline diagram argument uses \emph{only} relations (a)--(c) and no additional properties specific to homogeneous polynomials.
-
-BDW25 Remark~1.17 states that an interpolation analogue of the AMW24 probabilistic interpretation will appear in a forthcoming paper [BDW], indicating the experts consider this transfer worthy of dedicated treatment.
-
-\item \textbf{Node~1.4 (cascade mechanism details):} While the overall dynamics follow AMW24, the detailed cascade termination and state-space preservation arguments should be checked against the formal definition.
-\end{itemize}
-
-\subsection{Overall Confidence}
-
-\begin{center}
-\begin{tabular}{@{}lp{9cm}@{}}
-\toprule
-\textbf{Component} & \textbf{Assessment} \\
-\midrule
-Answer (YES) & \textbf{Very high.}  The \PushTASEP\ is the natural candidate; AMW24 establishes stationarity of the homogeneous ratios. \\[4pt]
-Foundations (1.1, 1.2, 1.4) & \textbf{High.}  Standard definitions and published results. \\[4pt]
-Stationarity (1.5) & \textbf{High.}  Direct citation of AMW24 Theorem~1.1. \\[4pt]
-Ratio identity (1.6) & \textbf{Medium--High.}  The Hecke stationarity argument is plausible and uses only published ingredients; the transfer step (Step~2) is the sole substantive risk.  BDW25 Theorem~7.1 provides an alternative route. \\[4pt]
-Nontriviality (1.7) & \textbf{High.}  Explicit computation. \\[4pt]
-Overall proof & \textbf{Medium--High.}  The proof is complete modulo the verification of Step~2 in Node~1.6. \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-
-%======================================================================
-\section{Prospects for a Successful Proof}
-\label{sec:prospects}
-%======================================================================
-
-The proof is in strong shape: all 97 Session~2 challenges have been resolved, the logical structure is clean (no circular dependencies), and the only substantive risk is concentrated in a single step (Node~1.6, Step~2).  We assess the prospects as \textbf{good}.
-
-\subsection{Why the Proof Is Likely to Succeed}
+Despite the fundamental error in the choice of Markov chain, the
+\texttt{af} attempt made several correct identifications:
 
 \begin{enumerate}
-\item \textbf{The answer is almost certainly correct.}  AMW24 establishes stationarity for the homogeneous ASEP polynomials; the ratio identity $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$ is a natural expectation given the Hecke-algebraic relationship between interpolation and homogeneous polynomials.
+\item \textbf{The answer is YES.} The \texttt{af} attempt correctly
+  identified that a nontrivial Markov chain exists.
 
-\item \textbf{The Hecke stationarity argument (Node~1.6) uses only published ingredients.}  BDW25 Proposition~2.10 (Hecke relations for $f^*_\mu$), AMW24 Theorem~1.1 (stationarity of $f_\mu$), and the Perron--Frobenius theorem are all established results.  The novelty is \emph{only} in the observation that the AMW24 proof uses only the Hecke relations.
+\item \textbf{The \PushTASEP{} family is the right family of chains.}
+  The official solution's interpolation \PushTASEP{} is a modification
+  of the ordinary \PushTASEP. The \texttt{af} attempt correctly
+  identified the \PushTASEP{} as the relevant dynamical framework.
 
-\item \textbf{An alternative algebraic route exists.}  BDW25 Theorem~7.1 (factorization of interpolation Macdonald polynomials) provides a complementary approach that may yield $f^*_\mu = C \cdot f_\mu$ directly, bypassing the stationarity argument entirely.
+\item \textbf{Correct use of published literature.} After Session~3
+  corrections, the \texttt{af} attempt correctly cited AMW24
+  Theorem~1.1, BDW25 Proposition~2.10, and other results. The notation
+  table (Node~1.2) was comprehensive.
 
-\item \textbf{The forthcoming [BDW] paper.}  BDW25 Remark~1.17 promises a probabilistic interpretation of the interpolation polynomials, which would likely establish the ratio identity as a corollary.
-\end{enumerate}
+\item \textbf{The nontriviality argument (Node~1.7) is sound.} The
+  sparsity argument --- exhibiting a zero in the transition matrix ---
+  is a valid proof of nontriviality. It would work for the interpolation
+  \PushTASEP{} as well, since the interpolation chain also has sparse
+  transition matrices (Step~1 only moves particles clockwise).
 
-\subsection{Strategies for Completing the Proof}
+\item \textbf{Clean logical structure after Session~3.} The
+  restructuring of Node~1.3 as a corollary of 1.5 + 1.6 was a good
+  logical move that broke the circularity. The dependency chain
+  $1.1 \to 1.2 \to 1.4 \to 1.5 \to 1.6 \to 1.3 \to 1.7 \to 1.8$ is
+  clean.
 
-\subsubsection{Strategy A: Verify the Hecke Transfer (Node~1.6, Step~2)}
-
-The most direct path: carefully verify that the AMW24 proof (Sections~3--6) uses \emph{only} the Hecke relations (a)--(c) of BDW25 Proposition~2.10 when establishing the balance equation $\sum_\mu f_\mu Q_{\mu,\nu} = 0$.  This requires a line-by-line audit of the AMW24 proof, checking that no homogeneity, positivity, or evaluation-at-special-points arguments are invoked.
-
-\textbf{Difficulty:} Medium.  The AMW24 proof is algebraic and structured around Hecke operators, so this verification is feasible.
-
-\subsubsection{Strategy B: BDW25 Factorization Route}
-
-Use BDW25 Theorem~7.1 (factorization of $P^*_\lambda$ in terms of interpolation polynomials at different partitions) to establish the proportionality $f^*_\mu = C(x,t) \cdot f_\mu$ directly.  The factorization theorem relates $P^*_\lambda$ to products of interpolation Macdonald polynomials of smaller rank, and the ASEP polynomial decomposition $P^*_\lambda = \sum f^*_\mu$ (BDW25 Proposition~2.15) combined with $P_\lambda = \sum f_\mu$ may yield the proportionality.
-
-\textbf{Difficulty:} Medium--Hard.  Requires working with the factorization machinery of BDW25 Section~7.
-
-\subsubsection{Strategy C: Await [BDW] Paper}
-
-BDW25 Remark~1.17 announces a forthcoming paper by Ben Dali and Williams establishing the probabilistic interpretation of interpolation ASEP polynomials.  If published, this would likely resolve Node~1.6 directly.
-
-\textbf{Difficulty:} None (but timeline uncertain).
-
-\subsubsection{Strategy D: Direct $q = 1$ Specialization}
-
-At $q = 1$, the interpolation Macdonald polynomials $E^*_\mu$ develop special properties (AMW24 Proposition~4.1, Corollary~4.6) that simplify the Hecke algebra action.  One could attempt to show directly that at $q = 1$, the lower-degree terms of $f^*_\mu$ are proportional to those of $f_\mu$, establishing $f^*_\mu = C \cdot f_\mu$ without the stationarity detour.
-
-\textbf{Difficulty:} Medium.
-
-\subsection{Assessment of Strategy Viability}
-
-\begin{center}
-\begin{tabular}{@{}lp{5.5cm}cc@{}}
-\toprule
-\textbf{Strategy} & \textbf{What It Resolves} & \textbf{Difficulty} & \textbf{Viability} \\
-\midrule
-A (Hecke transfer) & Node~1.6 Step~2 directly & Medium & High \\
-B (BDW25 factorization) & Node~1.6 via alternative route & Medium--Hard & Medium \\
-C (Await [BDW]) & Node~1.6 via external result & None & Uncertain \\
-D ($q=1$ specialization) & Node~1.6 via direct argument & Medium & Medium--High \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\noindent Strategy~A is the recommended primary approach, with Strategy~D as a backup.
-
-%======================================================================
-\section{Recommended Next Steps}
-\label{sec:next}
-%======================================================================
-
-\begin{enumerate}
-\item \textbf{Priority 1: Verification wave~2.}  Run adversarial verifiers on all 9 nodes (all are pending with 0 open challenges).  Priority order:
-  \begin{enumerate}
-  \item Node~1.6 (highest risk --- scrutinize the Hecke stationarity transfer, Step~2);
-  \item Node~1.4 (verify cascade mechanism matches AMW24 precisely);
-  \item Node~1.5 (verify AMW24 Theorem~1.1 is cited faithfully);
-  \item Nodes~1.1, 1.2, 1.3, 1.7, 1.8 (should be quick to verify).
-  \end{enumerate}
-
-\item \textbf{Priority 2: Address any new challenges from verification wave~2.}  Based on Session~2 experience, expect Node~1.6 to receive the most scrutiny.  Have the Hecke transfer verification (Strategy~A) ready as a repair.
-
-\item \textbf{Priority 3: Validate leaf nodes and propagate upward.}  Once leaf nodes pass verification, validate them and work upward to the root.
-
-\item \textbf{Priority 4: If Node~1.6 Step~2 is challenged again}, implement Strategy~D ($q = 1$ specialization) as an alternative route to the ratio identity.
+\item \textbf{The adversarial process caught real errors.} Session~2
+  correctly identified the logical fallacy in the original Node~1.6
+  (``both sum to 1, therefore equal''), the fabricated Ferrari--Martin
+  proof method, and the circular dependency. The adversarial framework
+  worked as intended.
 \end{enumerate}
 
 
 %======================================================================
-\section{Key References}
-\label{sec:refs}
+\section{What the \texttt{af} Attempt Missed}
+\label{sec:missed}
+%======================================================================
+
+\begin{enumerate}
+\item \textbf{The need for a new Markov chain.} The most critical miss.
+  The problem asks for a Markov chain whose stationary distribution
+  involves \emph{interpolation} polynomials, not homogeneous ones. The
+  ordinary \PushTASEP{} gives the homogeneous ratio $f_\mu / P_\lambda$,
+  not the interpolation ratio $F^*_\mu / P^*_\lambda$. A new chain ---
+  the interpolation \PushTASEP{} with its Step~2 reinsertion --- is
+  required.
+
+\item \textbf{The combinatorial machinery of two-line queues.} The
+  official solution is fundamentally combinatorial, encoding the Step~2
+  transitions via signed and unsigned two-line queues. The \texttt{af}
+  attempt did not engage with this machinery at all, instead pursuing an
+  algebraic approach via Hecke operators.
+
+\item \textbf{The factorization of interpolation Macdonald polynomials.}
+  The official solution crucially uses $P^*_\lambda(\mathbf{x}; 1, t) =
+  \prod_i e^*_{\lambda'_i}(\mathbf{x}; t)$ (from Do\l{}{\k{e}}ga and
+  BDW25), which provides the key Corollary~3.5 relating $F^*_\rho$ to
+  $F^*_{\rho^-}$. The \texttt{af} attempt mentioned BDW25 Theorem~7.1
+  (factorization) as an ``alternative route'' but never pursued it.
+
+\item \textbf{The distinction between interpolation and homogeneous
+  polynomials.} While the \texttt{af} attempt acknowledged that $f_\mu$
+  is the top-degree component of $f^*_\mu$ (BDW25 Theorem~2.3), it did
+  not fully reckon with the implications: $f^*_\mu \neq C \cdot f_\mu$,
+  so the ordinary \PushTASEP{} cannot have $f^*_\mu$ as stationary
+  weights.
+
+\item \textbf{The role of the BDW25 expansion.} The official proof uses
+  the expansion $F^*_\nu = \sum_\eta F^{*\eta}_\nu \cdot F^*_{\eta^-}$
+  from \cite[Theorem~1.15 and Lemma~5.6]{BDW25} as the starting point
+  for the stationarity proof. The \texttt{af} attempt did not use this
+  result.
+
+\item \textbf{The inherent difficulty flag in BDW25 Remark~1.17.} The
+  \texttt{af} attempt correctly noted that BDW25 Remark~1.17 defers the
+  interpolation probabilistic interpretation to a forthcoming paper, but
+  drew the wrong conclusion: it treated this as suggesting the Hecke
+  transfer argument merely needs careful verification, rather than as a
+  signal that a genuinely new construction is needed.
+\end{enumerate}
+
+
+%======================================================================
+\section{Alignment with Common LLM Failure Modes}
+\label{sec:failure}
+%======================================================================
+
+The authors' commentary identifies two common LLM failure modes for
+Problem~3:
+
+\begin{enumerate}
+\item \textbf{Metropolis--Hastings (trivial solution).} Using the
+  desired distribution formula to define transition rates. The
+  \texttt{af} attempt avoided this failure mode --- it correctly
+  recognized that this would be trivial.
+
+\item \textbf{Replacing interpolation polynomials by homogeneous ones.}
+  Solving the already-solved problem for $f_\mu / P_\lambda$ (ordinary
+  ASEP/Macdonald polynomials) instead of the interpolation versions
+  $F^*_\mu / P^*_\lambda$. The \texttt{af} attempt \emph{fell into this
+  exact failure mode}, proposing the ordinary \PushTASEP{} and
+  attempting to bridge the gap with the ratio identity.
+\end{enumerate}
+
+The \texttt{af} attempt's approach is essentially a more sophisticated
+version of failure mode~2: rather than simply ignoring the
+``interpolation'' qualifier, it acknowledged the distinction and
+attempted an algebraic bridge. But the bridge (the ratio identity) is
+built on the false premise that $f^*_\mu$ is proportional to $f_\mu$.
+
+
+%======================================================================
+\section{Lessons Learned}
+\label{sec:lessons}
+%======================================================================
+
+\begin{enumerate}
+\item \textbf{LLMs tend to reduce novel problems to known ones.} The
+  \texttt{af} attempt replaced the open problem (interpolation
+  \PushTASEP{} stationarity) with the solved problem (ordinary
+  \PushTASEP{} stationarity) and tried to bridge the gap algebraically.
+  This is a pervasive LLM failure mode: rather than constructing a
+  genuinely new object, the system reuses a known object and claims the
+  difference does not matter.
+
+\item \textbf{The adversarial framework caught errors but not the
+  fundamental one.} Sessions~2 and~3 caught fabricated proofs (Ferrari--Martin),
+  logical fallacies (``both sum to 1''), circular dependencies, and
+  notation errors. But they did not catch the deepest error: that the
+  \emph{wrong Markov chain} was proposed. The adversarial verifiers
+  correctly flagged Node~1.6 as high-risk but could not definitively
+  refute it.
+
+\item \textbf{Risk assessment was accurate.} The HANDOFF.md correctly
+  identified Node~1.6 as the highest-risk node and acknowledged the
+  critical caveat about Step~2. The system ``knew'' where the proof was
+  weakest but could not resolve the issue.
+
+\item \textbf{The ratio identity approach is seductive but wrong.} The
+  identity $f^*_\mu / P^*_\lambda = f_\mu / P_\lambda$ looks natural
+  and would elegantly reduce the problem to known results. But it is
+  false: $f^*_\mu$ contains lower-degree terms that prevent
+  proportionality to $f_\mu$.
+
+\item \textbf{Combinatorial constructions may be harder for LLMs than
+  algebraic manipulations.} The official solution requires inventing a
+  new dynamical system (Step~2 of the interpolation \PushTASEP) and
+  encoding its transitions via two-line queues. This is a creative
+  combinatorial construction that may be inherently harder for LLMs to
+  generate than algebraic manipulations of known identities.
+
+\item \textbf{The ``forthcoming paper'' signal was misread.} BDW25
+  Remark~1.17's deferral to a forthcoming paper was a strong signal that
+  the interpolation probabilistic interpretation requires new ideas
+  beyond the ordinary \PushTASEP. The \texttt{af} attempt interpreted
+  this as ``the transfer is nontrivial but doable''; the correct
+  interpretation was ``a new construction is needed.''
+
+\item \textbf{Nontriviality arguments transfer well.} The \texttt{af}
+  attempt's sparsity argument for nontriviality (Node~1.7) is clean,
+  correct, and would apply to the interpolation \PushTASEP{} as well.
+  This is a reusable technique.
+\end{enumerate}
+
+
+%======================================================================
+\section{Conclusion}
+\label{sec:conclusion}
+%======================================================================
+
+The \texttt{af} automated proof attempt for Problem~3 correctly
+identified the answer (YES) and the right family of Markov chains (the
+\PushTASEP{} family), but proposed the wrong specific chain (the
+ordinary \PushTASEP{} instead of the interpolation \PushTASEP) and
+attempted to bridge the gap with a ratio identity that is false. The
+official solution by Ben Dali and Williams constructs a genuinely new
+Markov chain --- the interpolation \PushTASEP{} with its novel Step~2
+reinsertion phase --- and proves stationarity directly via two-line
+queue combinatorics and the factorization of interpolation Macdonald
+polynomials.
+
+The \texttt{af} attempt's failure aligns precisely with the second
+common LLM failure mode identified by the problem authors: replacing
+interpolation polynomials by homogeneous ones and solving the
+already-solved problem. The adversarial framework successfully caught
+many errors (97 challenges in Session~2) but could not catch the
+fundamental misidentification of the Markov chain. The system's own risk
+assessment correctly flagged Node~1.6 (the ratio identity) as the
+highest-risk node, demonstrating that the \texttt{af} framework has some
+capacity for self-diagnosis even when it cannot resolve the underlying
+issue.
+
+
+%======================================================================
+% References
 %======================================================================
 
 \begin{thebibliography}{99}
 
-\bibitem{AMW24}
+\bibitem{AMW25}
 A.~Ayyer, J.~B.~Martin, and L.~K.~Williams,
-\emph{The inhomogeneous multispecies PushTASEP and the $t$-PushTASEP},
-arXiv:2403.10485 (2024).
-Theorem~1.1 (stationarity), Proposition~2.4 (irreducibility), Definition~2.1 (dynamics).
+\emph{The inhomogeneous $t$-PushTASEP and Macdonald polynomials at
+$q=1$},
+Annales de l'Institut Henri Poincar\'e D (2025).
+arXiv:2403.10485.
 
 \bibitem{BDW25}
-L.~Ben Dali and L.~K.~Williams,
-\emph{Interpolation ASEP polynomials},
-arXiv:2510.02587 (2025).
-Definition~1.2 ($f^*_\mu$), Definition~1.14 ($F^*_\mu$), Theorem~1.15 ($f^*_\mu = F^*_\mu$), Proposition~2.10 (Hecke relations), Proposition~2.15 ($P^*_\lambda$), Theorem~2.3 (top-degree), Theorem~7.1 (factorization), Remark~1.17 (forthcoming [BDW]).
+H.~Ben Dali and L.~K.~Williams,
+\emph{A combinatorial formula for interpolation Macdonald polynomials},
+Preprint arXiv:2510.02587 (2025).
 
 \bibitem{CMW22}
 S.~Corteel, O.~Mandelshtam, and L.~K.~Williams,
-\emph{From multiline queues to Macdonald polynomials via the exclusion process},
-arXiv:1811.01024 (2018).
-ASEP polynomials via multiline queues.
+\emph{From multiline queues to Macdonald polynomials via the exclusion
+process},
+Amer.\ J.\ Math.\ \textbf{144}(2) (2022), 395--436.
 
-\bibitem{AM23}
-A.~Ayyer and J.~B.~Martin,
-\emph{The multispecies PushTASEP on a ring},
-arXiv:2310.09740 (2023).
-PushTASEP at $t = 0$; irreducibility.
+\bibitem{Dol17}
+M.~Do\l{}{\k{e}}ga,
+\emph{Strong factorization property of Macdonald polynomials and
+higher-order Macdonald's positivity conjecture},
+J.\ Algebraic Combin.\ \textbf{46}(1) (2017), 135--163.
 
-\bibitem{FM07}
-P.~A.~Ferrari and J.~B.~Martin,
-\emph{Stationary distributions of multi-type totally asymmetric exclusion processes},
-Ann.\ Probab.\ \textbf{35}(3) (2007), 807--832.
-\textbf{Ordinary TASEP only} --- does NOT apply to the \PushTASEP.
-
-\bibitem{KS96}
-F.~Knop (1997) and S.~Sahi (1996),
-Interpolation Macdonald polynomials.
+\bibitem{AS19}
+P.~Alexandersson and M.~Sawhney,
+\emph{Properties of non-symmetric Macdonald polynomials at $q=1$ and
+$q=0$},
+Ann.\ Comb.\ \textbf{23}(2) (2019), 219--239.
 
 \end{thebibliography}
-
-
-\newpage
-%======================================================================
-\appendix
-\section{Full Proof Tree}
-\label{app:tree}
-%======================================================================
-
-The complete proof tree as exported from the adversarial proof framework (\texttt{af status}).
-All 9 nodes are \textcolor{pending}{\textbf{pending}}.
-All 97 challenges from Session~2 have been \textcolor{resolved}{\textbf{resolved}}.
-
-{\small\begin{verbatim}
-1 [pending] Root: For a restricted partition lambda with distinct parts,
-  |  there exists a nontrivial Markov chain on S_n(lambda) whose
-  |  stationary distribution is F*_mu(x;q=1,t) / P*_lambda(x;q=1,t),
-  |  where transition probabilities are not described using F*_mu.
-  |  Challenges: 0 open (0 total on root).
-  |
-  +-- 1.1 [pending] STATE SPACE SETUP
-  |   Defines S_n(lambda) as n! permutations of lambda on ring Z_n.
-  |   Species labels: {0} ∪ {k >= 2 : k in lambda}. One vacancy.
-  |   Inference: by_definition.
-  |   Challenges: 7 filed, 7 resolved, 0 open.
-  |
-  +-- 1.2 [pending] POLYNOMIAL IDENTIFICATION AND NOTATION
-  |   Cross-paper notation table (BDW25/AMW24/CMW22).
-  |   Key: f*_mu = F*_mu (BDW25 Thm 1.15), P*_lambda = sum f*_mu.
-  |   At q=1: f_mu/P_lambda = stationary weights (AMW24 Thm 1.1).
-  |   Depends on: 1.1.
-  |   Inference: by_definition.
-  |   Challenges: 13 filed, 13 resolved, 0 open.
-  |
-  +-- 1.3 [pending] POSITIVITY AND NORMALIZATION (COROLLARY)
-  |   pi(mu) = f*_mu/P*_lambda = f_mu/P_lambda >= 0, sums to 1.
-  |   Derives from: Node 1.5 (stationarity) + Node 1.6 (ratio id).
-  |   NOT standalone: circularity broken by making this a corollary.
-  |   Depends on: 1.5, 1.6.
-  |   Inference: modus_ponens.
-  |   Challenges: 11 filed, 11 resolved, 0 open.
-  |
-  +-- 1.4 [pending] MARKOV CHAIN CONSTRUCTION
-  |   Defines the inhomogeneous multispecies t-PushTASEP (AMW24 Def 2.1).
-  |   Exponential clocks rate 1/x_i, geometric displacement (param t),
-  |   cascade mechanism, vacancy termination.
-  |   Irreducibility via t=0 reduction (AMW24 Prop 2.4).
-  |   CT->DT uniformization: P = I + Q/R.
-  |   Depends on: 1.1.
-  |   Inference: by_definition.
-  |   Challenges: 17 filed, 17 resolved, 0 open.
-  |
-  +-- 1.5 [pending] STATIONARITY (AMW24 THEOREM 1.1)
-  |   The t-PushTASEP has stationary distribution
-  |   pi_lambda(mu) = f_mu(x;1,t) / P_lambda(x;1,t).
-  |   Proof: algebraic/combinatorial (multiline diagrams + q=1
-  |   properties of nonsymmetric Macdonald polynomials).
-  |   NOT Ferrari-Martin multiline Markov process.
-  |   Depends on: 1.2, 1.4.
-  |   Inference: external theorem (AMW24 Thm 1.1).
-  |   Challenges: 18 filed, 18 resolved, 0 open.
-  |
-  +-- 1.6 [pending] RATIO IDENTITY (CRUX)
-  |   f*_mu(x;1,t)/P*_lambda(x;1,t) = f_mu(x;1,t)/P_lambda(x;1,t).
-  |   Step 1: Both f*_mu and f_mu satisfy Hecke relations (BDW25 2.10).
-  |   Step 2: AMW24 balance proof transfers from f_mu to f*_mu.
-  |   Step 3: Perron-Frobenius uniqueness => proportionality.
-  |   CAVEAT: Step 2 is nontrivial (BDW25 Remark 1.17).
-  |   Alternative: BDW25 Thm 7.1 (factorization route).
-  |   Depends on: 1.2, 1.4, 1.5.
-  |   Inference: deduction (modus ponens).
-  |   Challenges: 16 filed, 16 resolved, 0 open.
-  |
-  +-- 1.7 [pending] NONTRIVIALITY
-  |   P^{tP} != P^{triv} (the i.i.d. sampler).
-  |   Proof: sparsity. For n=3, lambda=(3,2,0):
-  |   P^{tP}((3,2,0),(2,0,3)) = 0 (unreachable in one step),
-  |   but P^{triv}((3,2,0),(2,0,3)) = pi((2,0,3)) > 0.
-  |   Explicit cascade analysis for all 3 clock events given.
-  |   Depends on: 1.1, 1.2, 1.4, 1.5.
-  |   Inference: deduction.
-  |   Challenges: 13 filed, 13 resolved, 0 open.
-  |
-  +-- 1.8 [pending] CONCLUSION
-      Synthesizes Nodes 1.1-1.7.
-      Answer: YES. The t-PushTASEP is the required Markov chain.
-      W = W^circ universal; V case-dependent.
-      Depends on: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7.
-      Inference: deduction.
-      Challenges: 2 filed, 2 resolved, 0 open.
-
---- Statistics ---
-Nodes: 9 total (9 pending, 0 validated, 0 refuted, 0 archived)
-Challenges: 97 total (97 resolved, 0 open)
-\end{verbatim}}
-
-
-\newpage
-%======================================================================
-\section{Complete Challenge Summary}
-\label{app:challenges}
-%======================================================================
-
-All 97 challenges from Session~2 have been resolved in Session~3.
-The following table summarizes them by node and severity.
-
-{\footnotesize
-\begin{longtable}{@{}p{2.0cm}p{1.0cm}p{1.2cm}p{8.5cm}@{}}
-\toprule
-\textbf{Challenge ID} & \textbf{Node} & \textbf{Severity} & \textbf{Summary (abbreviated)} \\
-\midrule
-\endhead
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.1 --- State Space Setup (7 challenges, all resolved)}} \\
-\midrule
-ch-035eb1556b1 & 1.1 & major & Missing specification that every site has exactly one occupant \\
-ch-0516d10647b & 1.1 & major & Ring topology not stated to imply periodic boundary \\
-ch-9ef4da0119d & 1.1 & major & ``Vacancies and particles'' phrasing imprecise \\
-ch-e30fa7e54f4 & 1.1 & major & ``Well-separated'' is mathematically undefined \\
-ch-26d7d0aee8e & 1.1 & minor & Does not state $|S_n(\lambda)| = n!$ \\
-ch-9f66d8b2bf4 & 1.1 & minor & Inference type should be by\_definition \\
-ch-f87bbe81877 & 1.1 & minor & ``$n$ sites of a ring'' phrasing ambiguous \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.2 --- Polynomial Identification (13 challenges, all resolved)}} \\
-\midrule
-ch-3281658e3b5 & 1.2 & critical & Wrong arXiv for AMW24 \\
-ch-6bf8ddf12b6 & 1.2 & critical & Wrong arXiv for AMW24 (duplicate) \\
-ch-331c0d2575b & 1.2 & major & $P_\lambda$ as partition function not established \\
-ch-9b47dae9fa2 & 1.2 & major & Interpolation vs.\ homogeneous conflation \\
-ch-a7d6a8c27f2 & 1.2 & major & $P_\lambda$ partition function claim \\
-ch-bbd61e7e621 & 1.2 & major & Notation mismatch $F^*_\mu$ vs $f^*_\mu$ \\
-ch-bd836338c75 & 1.2 & major & Notation confusion AMW24 vs BDW25 \\
-ch-d37cd6df09e & 1.2 & major & Notation mismatch in identities \\
-ch-daea0680bca & 1.2 & major & AMW24 uses $F_\eta$ (no asterisk) \\
-ch-df660cc9766 & 1.2 & major & Conflation interpolation/homogeneous \\
-ch-34f72af7e1d & 1.2 & minor & Missing domain of validity \\
-ch-9dc89a4a93d & 1.2 & minor & Imprecise $E^*_\lambda$ description \\
-ch-f566b5b1fc6 & 1.2 & minor & Missing dependency on Node~1.1 \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.3 --- Positivity and Normalization (11 challenges, all resolved)}} \\
-\midrule
-ch-25c6c5abfb4 & 1.3 & critical & Circular positivity argument \\
-ch-35912e69e9b & 1.3 & critical & Undeclared circular dependency \\
-ch-51f3984ac6d & 1.3 & critical & Circular positivity: $F^*_\mu \ge 0$ standalone \\
-ch-8f12f73248b & 1.3 & critical & Missing dependency on Node~1.6 \\
-ch-1e86d0c492e & 1.3 & major & Hecke symmetrization identity source \\
-ch-27ac074eac1 & 1.3 & major & Division by $P^*_\lambda$ requires $P^*_\lambda > 0$ \\
-ch-32e4972f5d3 & 1.3 & major & Conclusion presented as assumption \\
-ch-3abeea04155 & 1.3 & major & Hecke symmetrization identity at $q=1$ \\
-ch-c45e58fbc9a & 1.3 & major & No proof strategy for nonnegativity \\
-ch-d3617c80310 & 1.3 & major & $P^*_\lambda > 0$ not established \\
-ch-c7c400820a7 & 1.3 & minor & Edge cases not addressed \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.4 --- Chain Construction (17 challenges, all resolved)}} \\
-\midrule
-ch-14311e6596c & 1.4 & critical & Ambiguous ``next weaker particle'' \\
-ch-1ec04fc2163 & 1.4 & critical & Fundamentally incomplete dynamics \\
-ch-41d4aa1ee0c & 1.4 & critical & Cascade mechanism omitted \\
-ch-f020555a39e & 1.4 & critical & Ambiguous ``next weaker particle'' \\
-ch-171bbc0fce3 & 1.4 & major & Vacancy behavior unspecified \\
-ch-39bf563cf04 & 1.4 & major & State space preservation not verified \\
-ch-4653a7ed47b & 1.4 & major & Irreducibility not addressed \\
-ch-4cf17322d27 & 1.4 & major & Missing parameter domains \\
-ch-50b37b860d3 & 1.4 & major & Irreducibility not addressed \\
-ch-74a7074b0a7 & 1.4 & major & CT vs DT not addressed \\
-ch-a1e37bfece4 & 1.4 & major & CT vs DT bridge missing \\
-ch-cb75c248d3c & 1.4 & major & State space preservation \\
-ch-da6b8df72d3 & 1.4 & major & Vacancy behavior unspecified \\
-ch-e172d2fb63a & 1.4 & major & No theorem citation \\
-ch-31ae7af3f1e & 1.4 & minor & Misleading phrase \\
-ch-6ead9e2ddfb & 1.4 & minor & Missing dependency on 1.1 \\
-ch-7274c0c9ec2 & 1.4 & minor & Wrong inference type \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.5 --- Stationarity (18 challenges, all resolved)}} \\
-\midrule
-ch-1c4cf108384 & 1.5 & critical & Misattribution to Ferrari--Martin \\
-ch-19bf58e0220 & 1.5 & critical & Marginal-to-polynomial gap \\
-ch-6670d121be2 & 1.5 & critical & No actual proof structure \\
-ch-76d4c8c4a62 & 1.5 & critical & Misattribution of proof method \\
-ch-934661602e9 & 1.5 & critical & False product-form claim \\
-ch-9658da4177f & 1.5 & critical & False product-form claim \\
-ch-e017b73e220 & 1.5 & critical & No actual proof structure \\
-ch-053def23083 & 1.5 & major & Uniqueness not established \\
-ch-26806410fb8 & 1.5 & major & Notation inconsistency \\
-ch-3e9c0d7d87e & 1.5 & major & Uniqueness of stationary distrib.\ \\
-ch-4139786e2b5 & 1.5 & major & $q=1$ specialization not justified \\
-ch-4aad6c675a9 & 1.5 & major & Wrong inference type \\
-ch-6dbd5eeae65 & 1.5 & major & No citation to specific theorem \\
-ch-974ea3da1b7 & 1.5 & major & Missing parameter domain \\
-ch-c7fac73aacf & 1.5 & major & Missing dependency on 1.4 \\
-ch-d3321b98205 & 1.5 & major & No specific theorem citation \\
-ch-fa80af229fc & 1.5 & major & Missing dependency on 1.4 \\
-ch-ae87a001369 & 1.5 & minor & Ambiguous phrase \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.6 --- Ratio Identity (16 challenges, all resolved)}} \\
-\midrule
-ch-0f3e80c57dd & 1.6 & critical & Wrong characterization of lower-order terms \\
-ch-1b65900e006 & 1.6 & critical & Missing stationarity proof \\
-ch-3cd11cc979f & 1.6 & critical & Fatal logical fallacy (``both sum to 1'') \\
-ch-3dbba9297a9 & 1.6 & critical & Open research problem \\
-ch-430bb8a8557 & 1.6 & critical & Vague Hecke symmetrization \\
-ch-4b9c28e7647 & 1.6 & critical & Vague Hecke symmetrization \\
-ch-710f6d7316d & 1.6 & critical & BDW25 \S7 factorization relevance \\
-ch-8f48027c9c1 & 1.6 & critical & Wrong inference type \\
-ch-9505e439a36 & 1.6 & critical & Fatal logical fallacy \\
-ch-d137782ed8d & 1.6 & critical & Ratio identity is open problem \\
-ch-e00bb70559e & 1.6 & critical & Unproven prerequisite \\
-ch-54dae5b9c11 & 1.6 & major & Conflation of notation \\
-ch-7fd14d62c5c & 1.6 & major & Alternative strategies identified but not pursued \\
-ch-e4f2f63360a & 1.6 & major & No concrete verification for $n=2$ \\
-ch-fef9b62e8eb & 1.6 & major & Undeclared dependency on 1.4, 1.5 \\
-ch-2d5406cea99 & 1.6 & major & Missing parameter domain \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.7 --- Nontriviality (13 challenges, all resolved)}} \\
-\midrule
-ch-0781b5a14b8 & 1.7 & critical & Argument is not a proof \\
-ch-0e46adbdfbd & 1.7 & critical & Transition probs may be described using $F^*_\mu$ \\
-ch-0fe08ac59a5 & 1.7 & critical & ``Described using'' is undefined \\
-ch-59a456f3dad & 1.7 & critical & Not a proof: ``local rates'' non-sequitur \\
-ch-6f040c21803 & 1.7 & critical & False claim of locality \\
-ch-dda1f9555ce & 1.7 & critical & What does ``described using'' mean? \\
-ch-f044bfe282d & 1.7 & critical & False claim of locality \\
-ch-38532088086 & 1.7 & major & Undeclared dependency on 1.4 \\
-ch-446df132c99 & 1.7 & major & $F^*_\mu$ are not symmetric-function stationary weights \\
-ch-53a810054e3 & 1.7 & major & No engagement with Hecke connection \\
-ch-a4ba65ae810 & 1.7 & major & $F^*_\mu$ are not symmetric-function stationary weights \\
-ch-ae20e2d87b0 & 1.7 & major & Wrong inference type \\
-ch-4068a87ead2 & 1.7 & minor & Missing parameter domain \\
-\midrule
-
-\multicolumn{4}{@{}l}{\textbf{Node 1.8 --- Conclusion (2 challenges, all resolved)}} \\
-\midrule
-ch-0d50b43ab6a & 1.8 & critical & Conclusion depends on all siblings \\
-ch-8ffcc34da1f & 1.8 & major & Missing parameter domains \\
-\bottomrule
-\end{longtable}
-}
-
-
-\newpage
-%======================================================================
-\section{Lessons Learned}
-\label{app:lessons}
-%======================================================================
-
-\begin{enumerate}
-\item \textbf{The Hecke stationarity argument (Node~1.6) is a plausible original mathematical argument} --- not just a citation of existing work.  It uses BDW25 Proposition~2.10 + AMW24 Theorem~1.1 + Perron--Frobenius in a novel combination.  This makes it the most vulnerable node to further challenges.
-
-\item \textbf{Restructuring Node~1.3 as a corollary of 1.5 + 1.6 elegantly breaks the circularity} without needing to prove the open problem of $F^*_\mu \ge 0$ directly.
-
-\item \textbf{The nontriviality argument via sparsity (Node~1.7) is clean and concrete} --- exhibiting a zero in the transition matrix is much stronger than informal ``local vs global'' heuristics.
-
-\item \textbf{Notation discipline pays off} --- the cross-paper notation table in Node~1.2 makes all subsequent nodes readable and prevents notation-related challenges.
-
-\item \textbf{Provers should always resolve ALL challenges}, not just critical ones.  Leaving minor challenges open accumulates technical debt.
-
-\item \textbf{Session~2 revealed that LLM provers have a tendency to fabricate proof methods} (e.g., attributing the stationarity proof to Ferrari--Martin).  Adversarial verification is essential for catching such errors.
-
-\item \textbf{The most common challenge type was ``notation inconsistency''} (across nodes 1.2, 1.3, 1.5, 1.6).  Establishing a canonical notation table early (Node~1.2) is critical.
-\end{enumerate}
 
 
 \end{document}
